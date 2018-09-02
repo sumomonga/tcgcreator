@@ -62,12 +62,10 @@ class DuelObj:
 
     def check_eternal_invalid(self,monster,user,effect_kind,place,deck_id,x,y,mine_or_other = -1):
         return self.check_eternal_det(monster,user,effect_kind,place,deck_id,x,y,mine_or_other ,2)
-    def check_no_choose(self,monster,user,effect_kind,place,deck_id,x,y,mine_or_other = -1):
+    def check_no_choose(self,monster,user,effect_kind,place,deck_id,x,y,mine_or_other = -1,index=None):
         duel = self.duel
         monster_det = Monster.objects.get(id=monster["id"])
         eternals = monster_det.eternal_effect.all()
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -76,17 +74,21 @@ class DuelObj:
             kind = eternal.eternal_kind
             tmps = tmps["monster"]
             tmp ={}
+            if index is not None:
+                tmp["index"] = index
             tmp["eternal"] = eternal.id
             tmp["effect_val"] = eternal.eternal_effect_val
             tmp["kind"] = eternal.eternal_kind
             tmp["priority"] = eternal.priority
-            tmp["user"] = mine_or_other
+            tmp["user"] = user
             if "already" in monster:
                 tmp["already"] = monster["already"]
             else:
                 tmp["already"] = 0
             tmp["place"] =  place
             tmp["deck_id"] =  deck_id
+            tmp["x"] =  x
+            tmp["y"] =  y
             tmp["place_id"] =   place_id
             tmp["mine_or_other"] =   mine_or_other
             self.invoke_eternal_effect_det(tmp,user)
@@ -95,30 +97,55 @@ class DuelObj:
         duel = self.duel
         monster_det = Monster.objects.get(id=monster["id"])
         eternals = monster_det.eternal_effect.all()
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
+        decks = self.deck_structure
+        graves = self.grave_structure
+        hands = self.hand_structure
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
-        for eternal in eternals:
-            tmps = json.loads(eternal.eternal_monster)
-            kind = eternal.eternal_kind
-            tmps = tmps["monster"]
-            tmp ={}
-            tmp["eternal"] = eternal.id
-            tmp["effect_val"] = eternal.eternal_effect_val
-            tmp["kind"] = eternal.eternal_kind
-            tmp["priority"] = eternal.priority
-            tmp["user"] = mine_or_other
-            if "already" in monster:
-                tmp["already"] = monster["already"]
-            else:
-                tmp["already"] = 0
-            tmp["place"] =  place
-            tmp["deck_id"] =  deck_id
-            tmp["place_id"] =   place_id
-            tmp["mine_or_other"] =   mine_or_other
-            self.invoke_eternal_effect_det(tmp,user)
+        flag = True
+        if not hasattr(self,"not_effected"):
+            self.not_effected = []
+        elif place_id in self.not_effected:
+            flag = False
+        else:
+            self.not_effected.append(place_id)
+        if place == "deck":
+            tmp_deck=decks.filter(id = deck_id).get()
+            if tmp_deck.eternal == True:
+                flag = False
+        if place == "grave":
+            tmp_deck=graves.filter(id = deck_id).get()
+            if tmp_deck.eternal == True:
+                flag = False
+        if place == "hand":
+            tmp_deck=hands.filter(id = deck_id).get()
+            if tmp_deck.eternal == True:
+                flag = False
+        if flag == True:
+            for eternal in eternals:
+                tmps = json.loads(eternal.eternal_monster)
+                kind = eternal.eternal_kind
+                tmps = tmps["monster"]
+                tmp ={}
+                tmp["eternal"] = eternal.id
+                tmp["effect_val"] = eternal.eternal_effect_val
+                tmp["kind"] = eternal.eternal_kind
+                tmp["priority"] = eternal.priority
+                tmp["user"] = user
+                if "already" in monster:
+                    tmp["already"] = monster["already"]
+                else:
+                    tmp["already"] = 0
+                tmp["place"] =  place
+                tmp["deck_id"] =  deck_id
+                tmp["place_id"] =   place_id
+                tmp["x"] =  x
+                tmp["y"] =  y
+                tmp["mine_or_other"] =   mine_or_other
+                self.invoke_eternal_effect_det(tmp,user)
+        if place_id in self.not_effected:
+            self.not_effected.remove(place_id)
         return self.check_eternal_det(monster,user,effect_kind,place,deck_id,x,y,mine_or_other ,0)
     def check_invoke_invalid(self,monster,user,effect_kind,place,deck_id,x,y,mine_or_other = -1,persist=0):
         return self.check_eternal_det(monster,user,effect_kind,place,deck_id,x,y,mine_or_other ,3,persist)
@@ -164,39 +191,50 @@ class DuelObj:
 
             if kind_flag == False:
                 continue
-            for place_det in not_effected["place"]:
-                place_det_det = place_det.split("_")
-                mine_or_other2 = place_det_det[2]
-                if place == place_det_det[0]:
-                    if place == "field":
-                        if mine_or_other2 == -1:
-                            pass
-                        elif mine_or_other2 != field[x][y]["mine_or_other"]:
-                            continue
-                        kind = field[x][y]["kind"]
-                        if kind != "":
-                            kind = kind.split("_")
-                        if place_det_det[1] in kind:
-                            if self.check_monster_condition_det(not_effected,monster,user,effect_kind,0,None,0,0,0,choose):
+            place_id = not_effected["place_id"]
+            eternals = EternalEffect.objects.get(id=not_effected["eternal"])
+            eternals = json.loads(eternals.invalid_monster)
+            eternals = eternals["monster"]
+            for eternal in eternals:
+                eternal_det=eternal["monster"]
+                if eternal["as_monster_condition"] == "trigger":
+                    if place_id == monster["place_unique_id"]:
+                        return True
+                if not eternal_det["place"]:
+                    continue
+                for place_det in eternal_det["place"]:
+                    place_det_det = place_det["det"].split("_")
+                    mine_or_other2 = place_det_det[2]
+                    if place == place_det_det[0]:
+                        if place == "field":
+                            if mine_or_other2 == -1:
+                                pass
+                            elif mine_or_other2 != field[x][y]["mine_or_other"]:
+                                continue
+                            kind = field[x][y]["kind"]
+                            if kind != "":
+                                kind = kind.split("_")
+                            if place_det_det[1] in kind:
+                                if self.check_monster_condition_det(eternal,monster,user,effect_kind,choose,None,0,0,0):
+                                    return True
+                        else:
+                            if(int(place_det_det[1]) == int(deck_id) ):
+                                if int(mine_or_other2) == -1:
+                                    pass
+                                if int(mine_or_other2)  == 1:
+                                    if (user == 1 and mine_or_other == 1) or (user == 2 and mine_or_other == 2):
+                                        pass
+                                    else:
+                                        continue
+                                elif int(mine_or_other2)  == 2:
+                                    if (user == 1 and mine_or_other == 2) or (user == 2 and mine_or_other == 1):
+                                        pass
+                                    else:
+                                        continue
+                            else:
+                                continue
+                            if self.check_monster_condition_det(eternal,monster,user,effect_kind,choose,place_det_det[0],place_det_det[1],0,0,mine_or_other):
                                 return True
-                else:
-                    if(int(place_det_det[1]) == int(deck_id) ):
-                        if int(mine_or_other2) == -1:
-                            pass
-                        if int(mine_or_other2)  == 1:
-                            if (user == 1 and mine_or_other == 1) or (user == 2 and mine_or_other == 2):
-                                pass
-                            else:
-                                continue
-                        elif int(mine_or_other2)  == 2:
-                            if (user == 1 and mine_or_other == 2) or (user == 2 and mine_or_other == 1):
-                                pass
-                            else:
-                                continue
-                    else:
-                        continue
-                    if self.check_monster_condition_det(not_effected,monster,user,effect_kind,0,None,0,0,0,0,choose):
-                         return True
 
         return False
 
@@ -252,9 +290,9 @@ class DuelObj:
                 if cond_val["init"] == 0:
                     value = tmp["value"]
                 elif cond_val["init"] == 1:
-                    value = tmp["init_value"]
+                    value = tmp["i_val"]
                 elif cond_val["init"] == 2:
-                    value = tmp["init_init_value"]
+                    value = tmp["i_i_val"]
                 if(cond_val["operator"] == "=" or cond_val["operator"] == "" ):
                     if int(value) != self.calculate_boland(cond_val["num"]):
                         tmp_flag= False
@@ -292,9 +330,9 @@ class DuelObj:
                 if cond_val["init"] == 0:
                     value = tmp["value"]
                 elif cond_val["init"] == 1:
-                    value = tmp["init_value"]
+                    value = tmp["i_val"]
                 elif cond_val["init"] == 2:
-                    value = tmp["init_init_value"]
+                    value = tmp["i_i_val"]
                 if(cond_val["operator"] == "=" or cond_val["operator"] == "" ):
                     if int(value) != self.calculate_boland(cond_val["num"]):
                         tmp_flag= False
@@ -329,6 +367,8 @@ class DuelObj:
             variable_variety = []
             variable_counter = 0
             counter = -1
+            x_counter = 0
+            y_counter = 0
             equation_kind =monster_condition["equation"]["equation_kind"]
             if(equation_kind == "x"):
                 counter = "x"
@@ -363,9 +403,9 @@ class DuelObj:
                     for monster2 in monsters:
                         if self.check_monster_condition_det(monster_condition,monster2["det"],user,"",0,monster2["place"],monster2["deck_id"],monster2["x"],monster2["y"],monster2["mine_or_other"]) == True:
                             if counter == "x":
-                                x_counter = monster2["x"]
+                                x_counter += monster2["x"]
                             elif counter == "y":
-                                y_counter = monster2["y"]
+                                y_counter += monster2["y"]
                             elif counter != -1:
                                 variable =monster2["det"]["variables"][counter]["value"]
                                 tmp_varieties = variable.split("_")
@@ -390,9 +430,6 @@ class DuelObj:
                         mine_or_other = 3
                     if(place_tmp[0] == "field" ):
                         field = self.field
-                        pprint("field")
-                        pprint(user)
-                        pprint(mine_or_other)
                         for x in range(len(field)):
                             for y in range(len(field[x])):
                                 kind = field[x][y]["kind"]
@@ -414,6 +451,10 @@ class DuelObj:
                                             if field[x][y]["det"]["id"] not in variety:
                                                 variety.append(field[x][y]["det"]["id"])
 
+                                            if counter == "x":
+                                                x_counter += x
+                                            if counter == "y":
+                                                y_counter += y
                                             if counter != -1:
                                                 variable = field[x][y]["det"]["variables"][counter]
                                                 tmp_varieties = variable["value"].split("_")
@@ -511,6 +552,28 @@ class DuelObj:
 
             elif(equation_kind == "kind"):
                 if(len(variety) >= self.calculate_boland(min_equation_number,monster) and len(variety) <= self.calculate_boland(max_equation_number,monster)):
+                    if and_or_all == "or":
+                        flag =  True
+                    elif flag == True:
+                        flag =  True
+                else:
+                    if and_or_all == "and":
+                        flag =  False
+                    elif flag == False:
+                        flag =  False
+            elif counter == "x":
+                if(x_counter >= self.calculate_boland(min_equation_number,monster) and x_counter <= self.calculate_boland(max_equation_number,monster)):
+                    if and_or_all == "or":
+                        flag =  True
+                    elif flag == True:
+                        flag =  True
+                else:
+                    if and_or_all == "and":
+                        flag =  False
+                    elif flag == False:
+                        flag =  False
+            elif counter == "y":
+                if(y_counter >= self.calculate_boland(min_equation_number,monster) and y_counter <= self.calculate_boland(max_equation_number,monster)):
                     if and_or_all == "or":
                         flag =  True
                     elif flag == True:
@@ -644,9 +707,13 @@ class DuelObj:
         if(trigger.turn != 0):
             if(duel.user_turn == 1 and user==1 or duel.user_turn == 2 and user == 2):
                 if(trigger.turn != 1):
+                    pprint("a")
+                    pprint(trigger)
                     return False
             elif(duel.user_turn == 2 and user==1 or duel.user_turn == 1 and user == 2):
                 if(trigger.turn != 2):
+                    pprint("b")
+                    pprint(trigger)
                     return False
         if(trigger.trigger_condition == ""):
             return True
@@ -1032,6 +1099,12 @@ class DuelObj:
             return self.get_name_timing_mess(val,mode)
         else:
             return self.get_name_effect(val,mode)
+    def get_name_monster_all(self,monsters):
+        return_value = ""
+        for monster in monsters:
+            return_value+=monster["det"]["monster_name"]+" "
+        return return_value
+            
     def get_name_all(self,val,mode=0):
         if(val[0] != "{"):
             return val
@@ -1579,20 +1652,23 @@ class DuelObj:
         return_value = []
         available_trigger=[]
         triggers = Trigger.objects.filter(Q(phase__isnull=True) | Q(phase = phase))
-        triggers = triggers.filter(Q(chain__isnull = True) | Q(chain__contains=str(duel.chain)))
+        triggers = triggers.filter(Q(chain__isnull = True) | \
+                                   (Q(chain_kind = 0) & Q(chain__lte=duel.chain)) | \
+                                   (Q(chain_kind = 1) & Q(chain__gte=duel.chain)) | \
+                                   (Q(chain_kind = 2) & Q(chain=duel.chain)))
         if duel.timing != None:
             triggers = triggers.filter(Q(timing=duel.timing))
         else:
             triggers = triggers.filter(Q(none_timing = True))
+
         triggers = triggers.filter(priority__lt= duel.current_priority)
         triggers = triggers.order_by('-priority').all();
 
-        trigger_first = triggers.first()
         if(user == duel.user_turn):
             triggers = triggers.filter(Q(turn=0) | Q(turn = 1))
         else:
             triggers = triggers.filter(Q(turn=0) | Q(turn = 2))
-
+        trigger_first = triggers.first()
 
         if(trigger_first is None):
             return_value.append(None)
@@ -1711,12 +1787,12 @@ class DuelObj:
         self.log_write()
         self.log.close()
     def log_write(self):
-        #for history in connection.queries:
-        #    self.log.write(history["sql"]+';\n')
-        #reset_queries()
+        for history in connection.queries:
+            self.log.write(history["sql"]+';\n')
+        reset_queries()
         return
     def save_deck_info(self,user,other_user,room_number):
-        decks = Deck.objects.all()
+        decks = self.deck_structure
         i=0
         for deck in decks:
             if(deck.mine_or_other == 1):
@@ -1738,7 +1814,7 @@ class DuelObj:
                 self.log_write()
             i+=1
     def save_grave_info(self,user,other_user,room_number):
-        graves = Grave.objects.all()
+        graves = self.grave_structure
         i=0
         for grave in graves:
             if(grave.mine_or_other == 1):
@@ -1760,7 +1836,7 @@ class DuelObj:
                 self.log_write()
             i+=1
     def save_hand_info(self,user,other_user,room_number):
-        hands = Hand.objects.all()
+        hands = self.hand_structure
         i=0
         for hand in hands:
             if(hand.mine_or_other == 1):
@@ -1802,7 +1878,9 @@ class DuelObj:
         self.virtual_variables = result_virtual_variables
 
     def init_deck_info(self,user,other_user,room_number):
-        decks = Deck.objects.all()
+        self.deck_structure = Deck.objects.all()
+        decks = self.deck_structure
+
         i=0
         result_decks = []
         result_decks.append(None)
@@ -1824,7 +1902,8 @@ class DuelObj:
 
         self.decks = result_decks
     def init_grave_info(self,user,other_user,room_number):
-        graves = Grave.objects.all()
+        self.grave_structure = Grave.objects.all()
+        graves = self.grave_structure
         result_graves = []
         result_graves.append(None)
         i=0
@@ -1846,7 +1925,8 @@ class DuelObj:
 
         self.graves = result_graves
     def init_hand_info(self,user,other_user,room_number):
-        hands = Hand.objects.all()
+        self.hand_structure = Hand.objects.all()
+        hands = self.hand_structure
         result_hands = []
         result_hands.append(None)
         i=0
@@ -1867,7 +1947,6 @@ class DuelObj:
             i+=1
 
         self.hands = result_hands
-
 
     def get_grave_with_effect(self,user_decks,effect_det,effect_kind,exclude,user,place,deck_id,x,y,mine_or_other):
         return self.get_deck_with_effect(user_decks,effect_det,effect_kind,exclude,user,place,deck_id,x,y,mine_or_other)
@@ -1896,8 +1975,8 @@ class DuelObj:
         for index in range(len(user_decks)):
             effect_flag = False
             if effect_kind != "":
-                if not self.check_no_choose(user_decks[index],user,effect_kind,place,deck_id,x,y,mine_or_other):
-                    effect_flag = True
+                if self.check_no_choose(user_decks[index],user,effect_kind,place,deck_id,x,y,mine_or_other):
+                   effect_flag = True
             if exclude != "":
                 excludes = exclude.split(",")
                 for exclude_det in excludes:
@@ -1956,9 +2035,9 @@ class DuelObj:
                         if cond_val["init"] == 0:
                             value = tmp["value"]
                         elif cond_val["init"] == 1:
-                            value = tmp["init_value"]
+                            value = tmp["i_val"]
                         elif cond_val["init"] == 2:
-                            value = tmp["init_init_value"]
+                            value = tmp["i_i_val"]
                         if(cond_val["operator"] == "=" or cond_val["operator"] == "" ):
                             if int(value) != self.calculate_boland(cond_val["num"]):
                                 tmp_flag= False
@@ -2136,7 +2215,7 @@ class DuelObj:
             y = eternal["y"]
             det = fields[x][y]["det"]
             eternal["place_id"] = det["place_unique_id"]
-            if  not self.check_eternal_invalid(self,det,effect_user,invalid_kinds,"field",0,x,y,field[x][y]["mine_or_other"]):
+            if  not self.check_eternal_invalid(det,effect_user,invalid_kinds,"field",0,x,y,fields[x][y]["mine_or_other"]):
                 fields[x][y]["det"]["already"] = 1
                 flag = True
                 self.field=fields
@@ -2145,7 +2224,7 @@ class DuelObj:
                 flag =  False
                 self.field=fields
         elif eternal["place"] == "deck":
-            deck_id = eternal["deck_id"]
+            deck_id = int(eternal["deck_id"])
             mine_or_other = eternal["mine_or_other"]
             if (effect_user == 1 and mine_or_other == 1) or (effect_user == 2 and mine_or_other == 2):
                 mine_or_other2 = 1
@@ -2166,21 +2245,21 @@ class DuelObj:
                     if decks[deck_i]["place_unique_id"] == eternal["place_id"]:
                         i = deck_i
                         break
-            det=decks[deck_i]
-            if  not self.check_eternal_invalid(decks[deck_i],effect_user,invalid_kinds,"deck",deck_id,0,0,mine_or_other2):
-                decks[deck_i]["already"]= 1
+            det=decks[i]
+            if  not self.check_eternal_invalid(decks[i],effect_user,invalid_kinds,"deck",deck_id,0,0,mine_or_other2):
+                decks[i]["already"]= 1
                 flag = True
             else:
                 flag = False
-                decks[deck_i]["already"]= 0
-            if mine_or_other == 1:
+                decks[i]["already"]= 0
+            if mine_or_other2 == 1:
                 self.decks[deck_id]["mydeck"] = decks
-            elif mine_or_other == 2:
+            elif mine_or_other2 == 2:
                 self.decks[deck_id]["otherdeck"]= decks
-            elif mine_or_other == 3:
+            elif mine_or_other2 == 3:
                 self.decks[deck_id]["commondeck"] = decks
         elif eternal["place"] == "grave":
-            deck_id = eternal["deck_id"]
+            deck_id = int(eternal["deck_id"])
             mine_or_other = eternal["mine_or_other"]
             if (effect_user == 1 and mine_or_other == 1) or (effect_user == 2 and mine_or_other == 2):
                 mine_or_other2 = 1
@@ -2188,11 +2267,11 @@ class DuelObj:
                 mine_or_other2 = 2
             else:
                 mine_or_other2 = 3
-            if mine_or_other == 1:
+            if mine_or_other2 == 1:
                 graves = self.graves[deck_id]["mygrave"]
-            elif mine_or_other == 2:
+            elif mine_or_other2 == 2:
                 graves = self.graves[deck_id]["othergrave"]
-            elif mine_or_other == 3:
+            elif mine_or_other2 == 3:
                 graves = self.graves[deck_id]["commongrave"]
             if "index" in eternal:
                 i = eternal["index"]
@@ -2201,21 +2280,21 @@ class DuelObj:
                     if graves[grave_i]["place_unique_id"] == eternal["place_id"]:
                         i = grave_i
                         break
-            det=graves[grave_i]
-            if  not self.check_eternal_invalid(graves[grave_i],effect_user,invalid_kinds,"grave",deck_id,0,0,mine_or_other2):
-                graves[grave_i]["already"]= 1
+            det=graves[i]
+            if  not self.check_eternal_invalid(graves[i],effect_user,invalid_kinds,"grave",deck_id,0,0,mine_or_other2):
+                graves[i]["already"]= 1
                 flag = True
             else:
                 flag = False
-                graves[grave_i]["already"]= 0
-            if mine_or_other == 1:
+                graves[i]["already"]= 0
+            if mine_or_other2 == 1:
                 self.graves[deck_id]["mygrave"] = graves
-            elif mine_or_other == 2:
+            elif mine_or_other2 == 2:
                 self.graves[deck_id]["othergrave"] = graves
-            elif mine_or_other == 3:
+            elif mine_or_other2 == 3:
                 self.graves[deck_id]["commongrave"] = graves
         elif eternal["place"] == "hand":
-            deck_id = eternal["deck_id"]
+            deck_id = int(eternal["deck_id"])
             mine_or_other = eternal["mine_or_other"]
             if (effect_user == 1 and mine_or_other == 1) or (effect_user == 2 and mine_or_other == 2):
                 mine_or_other2 = 1
@@ -2223,11 +2302,11 @@ class DuelObj:
                 mine_or_other2 = 2
             else:
                 mine_or_other2 = 3
-            if mine_or_other == 1:
+            if mine_or_other2 == 1:
                 hands = self.hands[deck_id]["myhand"]
-            elif mine_or_other == 2:
+            elif mine_or_other2 == 2:
                 hands = self.hands[deck_id]["otherhand"]
-            elif mine_or_other == 3:
+            elif mine_or_other2 == 3:
                 hands = self.hands[deck_id]["commonhand"]
             if "index" in eternal:
                 i = eternal["index"]
@@ -2236,18 +2315,18 @@ class DuelObj:
                     if hands[hand_i]["place_unique_id"] == eternal["place_id"]:
                         i = hand_i
                         break
-            det=hands[hand_i]
-            if  not self.check_eternal_invalid(hands[hand_i],effect_user,invalid_kinds,"hand",deck_id,0,0,mine_or_other2):
-                hands[hand_i]["already"]= 1
+            det=hands[i]
+            if  not self.check_eternal_invalid(hands[i],effect_user,invalid_kinds,"hand",deck_id,0,0,mine_or_other2):
+                hands[i]["already"]= 1
                 flag = True
             else:
                 flag =  False
-                hands[hand_i]["already"]= 0
-            if mine_or_other == 1:
+                hands[i]["already"]= 0
+            if mine_or_other2 == 1:
                 self.hands[deck_id]["myhand"] = hands
-            elif mine_or_other == 2:
+            elif mine_or_other2 == 2:
                 self.hands[deck_id]["otherhand"] = hands
-            elif mine_or_other == 3:
+            elif mine_or_other2 == 3:
                 self.hands[deck_id]["commonhand"] = hands
         if flag == True:
             if val == 0:
@@ -2346,9 +2425,9 @@ class DuelObj:
     def invoke_eternal_effect(self,eternal_effects,user,other_user):
         duel = self.duel
         room_number = self.room_number
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
-        hands = Hand.objects.all()
+        decks = self.deck_structure
+        graves = self.grave_structure
+        hands = self.hand_structure
         fields = self.field
         eternals = []
         for eternal in eternal_effects:
@@ -2732,8 +2811,9 @@ class DuelObj:
             user = chain_user[str(duel.chain)]
         else :
             user = self.user
-        self.duel.winner = user;
-        self.duel.save();
+        if self.duel.winner == 0:
+            self.duel.winner = user;
+            self.duel.save();
     def lose_the_game(self,cost =0):
         if cost == 0:
             chain_user = json.loads(duel.chain_user)
@@ -2743,11 +2823,12 @@ class DuelObj:
             user = chain_user[str(duel.chain)]
         else :
             user = self.user
-        if user == 1:
-            self.duel.winner = 2;
-        elif user == 2:
-            self.duel.winner = 1;
-        self.duel.save();
+        if self.duel.winner == 0:
+            if user == 1:
+                self.duel.winner = 2;
+            elif user == 2:
+                self.duel.winner = 1;
+            self.duel.save();
         return
     def cancel_cost(self):
         self.duel.in_cost = False
@@ -2977,13 +3058,13 @@ class DuelObj:
                 else:
                     monster_effect= monster_effect.monster_effect_next
             elif monster_effect_unwrap.monster_effect_val == 17:
-                log_tmp = self.write_log(monster_effect.log,user)
                 duel.log_turn += log_tmp
                 duel.log += log_tmp
                 effect_kind = self.get_pac_effect_kind()
                 if effect_kind is None:
                     effect_kind = monster_effect.monster_effect_kind
                 move_to = self.move_from_monster_simple(effect_kind)
+                log_tmp = self.write_log(monster_effect.log,user,move_to)
 
                 if move_to is not None:
                     self.move_to_monster(move_to,effect_kind)
@@ -3108,7 +3189,6 @@ class DuelObj:
             trigger_deck_id_from = 0
             trigger_from_x =0
             trigger_from_y = 0
-        pprint(monster_effect)
         if not self.check_invoke_monster_effect(trigger_det,user,kinds,trigger_place,trigger_deck_id,trigger_x,trigger_y,1,trigger_det_from,trigger_place_from,trigger_deck_id_from,trigger_from_x,trigger_from_y):
             if monster_effect.pac :
                 return self.push_pac(monster_effect.pac)
@@ -3170,13 +3250,15 @@ class DuelObj:
                     else:
                         return self.pop_pac(user)
         elif monster_effect_unwrap.monster_effect_val == 17:
-            log_tmp = self.write_log(monster_effect.log,user)
-            duel.log_turn += log_tmp
-            duel.log += log_tmp
             effect_kind = self.get_pac_effect_kind()
             if effect_kind is None:
                 effect_kind = monster_effect.monster_effect_kind
             move_to = self.move_from_monster_simple(effect_kind)
+            data ={}
+            data["monsters"] = move_to
+            log_tmp = self.write_log(monster_effect.log,user,data)
+            duel.log_turn += log_tmp
+            duel.log += log_tmp
 
             if move_to is not None:
                 self.move_to_monster(move_to,effect_kind)
@@ -3188,13 +3270,15 @@ class DuelObj:
                 else:
                     return self.pop_pac(user)
         elif monster_effect_unwrap.monster_effect_val == 1:
-            log_tmp = self.write_log(monster_effect.log,user)
-            duel.log_turn += log_tmp
-            duel.log += log_tmp
             effect_kind = self.get_pac_effect_kind()
             if effect_kind is None:
                 effect_kind = monster_effect.monster_effect_kind
             move_to = self.move_from_monster(effect_kind)
+            data ={}
+            data["monsters"] = move_to
+            log_tmp = self.write_log(monster_effect.log,user,data)
+            duel.log_turn += log_tmp
+            duel.log += log_tmp
 
             if move_to is not None:
                 self.move_to_monster(move_to,effect_kind)
@@ -3230,10 +3314,12 @@ class DuelObj:
                 else:
                     return self.pop_pac(user)
         elif monster_effect_unwrap.monster_effect_val == 2:
-            log_tmp = self.write_log(monster_effect.log,user)
+            change_val = self.change_variable()
+            data ={}
+            data["val"] = change_val
+            log_tmp = self.write_log(monster_effect.log,user,data)
             duel.log_turn += log_tmp
             duel.log += log_tmp
-            self.change_variable()
             if monster_effect.pac :
                 return self.push_pac(monster_effect.pac)
             else:
@@ -3320,8 +3406,9 @@ class DuelObj:
             log_tmp = self.write_log(monster_effect.log,user)
             duel.log_turn += log_tmp
             duel.log += log_tmp
-            timing = duel.timing.next_timing
-            duel.timing = timing
+            if duel.timing is not None:
+                timing = duel.timing.next_timing
+                duel.timing = timing
             if duel.timing is None:
                 self.timing_mess = {}
             if monster_effect.pac :
@@ -3356,7 +3443,7 @@ class DuelObj:
                     return monster_effect.monster_effect_next
                 else:
                     return self.pop_pac(user)
-    def write_log(self,log_text,user):
+    def write_log(self,log_text,user,data=None):
         if log_text == "":
             return ""
         while 1:
@@ -3364,13 +3451,18 @@ class DuelObj:
             if log_calc is None:
                 break
             dummy = log_calc.group()
-            if dummy[0] != "/":
-                tmp_log = self.get_name_all(dummy[1:-1],1)
+            dummy = dummy[1:-1]
+            if dummy == "@":
+                tmp_log = self.get_name_monster_all(data["monsters"])
+            elif dummy == "*":
+                tmp_log = str(data["val"])
+            elif dummy[0] != "/":
+                tmp_log = self.get_name_all(dummy,1)
             elif dummy[1] == "1":
                 if user == 1:
-                    tmp_log = self.user1.first_name
+                    tmp_log = self.duel.user_1.first_name
                 else:
-                    tmp_log = self.user2.first_name
+                    tmp_log = self.duel.user_2.first_name
             elif dummy[1] == "2":
                 if user == 1:
                     tmp_log = self.user2.first_name
@@ -3481,32 +3573,30 @@ class DuelObj:
         mine_or_other = int(variable_id[2])
         variable_id = variable_id[1]
         variable = json.loads(duel.global_variable)
-        pprint(monster_effect)
-        pprint(user)
-        pprint(mine_or_other)
+        change_val = self.calculate_boland(monster_effect_text["variable_change_val"])
         if mine_or_other == 0:
             if(monster_effect_text["variable_change_how"] == 0):
-                variable[str(variable_id)]["value"]+= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["value"]+= change_val
             elif(monster_effect_text["variable_change_how"] == 1):
-                variable[str(variable_id)]["value"]-= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["value"]-= change_val
             elif(monster_effect_text["variable_change_how"] == 2):
-                variable[str(variable_id)]["value"]= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["value"]= change_val
         elif (mine_or_other == 1 and user == 1) or (mine_or_other == 2 and user == 2) :
             if(monster_effect_text["variable_change_how"] == 0):
-                variable[str(variable_id)]["1_value"]+= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["1_value"]+= change_val
             elif(monster_effect_text["variable_change_how"] == 1):
-                variable[str(variable_id)]["1_value"]-= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["1_value"]-= change_val
             elif(monster_effect_text["variable_change_how"] == 2):
-                variable[str(variable_id)]["1_value"]= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["1_value"]= change_val
         elif (mine_or_other == 2 and user == 1) or (mine_or_other == 1 and user == 2) :
             if(monster_effect_text["variable_change_how"] == 0):
-                variable[str(variable_id)]["2_value"]+= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["2_value"]+= change_val
             elif(monster_effect_text["variable_change_how"] == 1):
-                variable[str(variable_id)]["2_value"]-= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["2_value"]-= change_val
             elif(monster_effect_text["variable_change_how"] == 2):
-                variable[str(variable_id)]["2_value"]= self.calculate_boland(monster_effect_text["variable_change_val"])
+                variable[str(variable_id)]["2_value"]= change_val
         duel.global_variable = json.dumps(variable)
-        return
+        return change_val
 
     def change_monster_variable(self,monster_effect,effect_kind,cost =0):
         duel = self.duel
@@ -4111,6 +4201,8 @@ class DuelObj:
                                 continue
                             if field[x][y]["mine_or_other"] != mine_or_other2:
                                 continue
+                            if field[x][y]["det"] is None:
+                                continue
                             effect_flag = False
                             if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                 continue
@@ -4557,7 +4649,7 @@ class DuelObj:
                                     if(field[x][y]["det"]["place_unique_id"] != place_id):
                                         return "error"
                                     effect_flag = False
-                                    if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                    if self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                         continue
                                     field[x][y]["det"]["kind"] = effect_kind
                                     field[x][y]["det"]["user"] = int(field[x][y]["mine_or_other"])
@@ -4573,7 +4665,7 @@ class DuelObj:
                                     self.field = field
                                     continue
                                 else:
-                                    if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                    if self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                         continue
                                     cost_result = self.cost_result
                                     if not "remove" in cost_result:
@@ -4610,7 +4702,7 @@ class DuelObj:
                             for user_deck in user_decks:
                                 if place_id== user_deck["place_unique_id"]:
                                     effect_flag = False
-                                    if not self.check_not_effected(user_deck,chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                    if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
                                         if cost == 0:
                                             user_decks.remove(user_deck);
                                             user_deck["kind"] = effect_kind
@@ -4660,7 +4752,7 @@ class DuelObj:
                             for user_grave in user_graves:
                                 if place_id== user_grave["place_unique_id"]:
                                     effect_flag = False
-                                    if not self.check_not_effected(user_grave,chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                    if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
                                         if cost == 0:
                                             user_graves.remove(user_grave);
                                             user_grave["kind"] = effect_kind
@@ -4711,7 +4803,7 @@ class DuelObj:
                             user_hands = hand
                             for user_hand in user_hands:
                                 if place_id== user_hand["place_unique_id"]:
-                                    if not self.check_not_effected(user_hand,chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                    if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
                                         if cost == 0:
                                             user_hands.remove(user_hand);
                                             return_tmp = {}
@@ -4775,7 +4867,7 @@ class DuelObj:
                             if cost == 0:
                                 if(field[x][y]["det"] is not None):
                                     effect_flag = False
-                                    if not self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                    if not self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                         det = field[x][y]["det"].copy();
                                         field[x][y]["det"] = None
                                         det =self.copy_monster_from_field(det)
@@ -5086,7 +5178,7 @@ class DuelObj:
                                 if field[x][y]["mine_or_other"] != mine_or_other:
                                     continue
                                 effect_flag = False
-                                if not self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                if not self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                     continue
 
                                 if not self.validate_answer(field[x][y]["det"],monster_effect_det["monster"],exclude,duel):
@@ -5185,7 +5277,7 @@ class DuelObj:
                                         if(field[x][y]["det"]["place_unique_id"] != place_id):
                                             return "error"
                                         effect_flag = False
-                                        if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                        if self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                             continue
                                         field[x][y]["det"]["kind"] = effect_kind
                                         field[x][y]["det"]["user"] = int(field[x][y]["mine_or_other"])
@@ -5238,7 +5330,7 @@ class DuelObj:
                                 user_decks = deck
                                 for user_deck in user_decks:
                                     if place_id== user_deck["place_unique_id"]:
-                                        if not self.check_not_effected(user_deck,chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                        if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
                                             if cost == 0:
                                                 user_decks.remove(user_deck);
                                                 user_deck["kind"] = effect_kind
@@ -5288,7 +5380,7 @@ class DuelObj:
                                 for user_grave in user_graves:
                                     if place_id== user_grave["place_unique_id"]:
                                         effect_flag = False
-                                        if not self.check_not_effected(user_grave,chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                        if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
                                             if cost == 0:
                                                 user_graves.remove(user_grave);
                                                 user_grave["kind"] = effect_kind
@@ -5338,7 +5430,7 @@ class DuelObj:
                                 for user_hand in user_hands:
                                     if place_id== user_hand["place_unique_id"]:
                                         effect_flag = False
-                                        if not self.check_not_effected(user_hand,chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                        if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
                                             if cost == 0:
                                                 user_hands.remove(user_hand);
                                                 user_hand["kind"] = effect_kind
@@ -5404,7 +5496,7 @@ class DuelObj:
                                     if(field[x][y]["det"] is not None):
                                         effect_flag = False
                                         place_id = field[x][y]["det"]["place_unique_id"]
-                                        if not self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                        if not self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                             det = field[x][y]["det"].copy();
                                             field[x][y]["det"] = None
                                             det =self.copy_monster_from_field(det)
@@ -5470,25 +5562,32 @@ class DuelObj:
                             if not tmp_deck:
                                 return return_value
                             if cost == 0:
+                                move_flag = False
                                 if(monster_effect_text["move_how"] == 0):
                                     user_deck =self.copy_monster_from_deck(user_decks[tmp_deck[0]])
-                                    del user_decks[tmp_deck[0]]
-                                    del tmp_deck[0]
-                                    for tmpdecktmp in range(len(tmp_deck)):
-                                        tmp_deck[tmpdecktmp]-=1
+                                    if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                        del user_decks[tmp_deck[0]]
+                                        del tmp_deck[0]
+                                        for tmpdecktmp in range(len(tmp_deck)):
+                                            tmp_deck[tmpdecktmp]-=1
+                                        move_flag = True
                                 elif(monster_effect_text["move_how"] == 1):
                                     user_deck =self.copy_monster_from_deck(user_decks[tmp_deck[-1]])
-                                    user_decks.pop(tmp_deck[-1])
-                                    tmp_deck.pop()
+                                    if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                        user_decks.pop(tmp_deck[-1])
+                                        tmp_deck.pop()
+                                        move_flag = True
                                 else:
                                     rand_i = random.randrange(len(tmp_deck))
                                     range_i =tmp_deck[rand_i]
                                     user_deck =self.copy_monster_from_deck(user_decks[range_i])
-                                    user_decks.pop(range_i)
-                                    tmp_deck.pop(rand_i)
-                                    for tmpdecktmp in range(len(tmp_deck)-rand_i):
-                                        tmp_deck[tmpdecktmp+rand_i]-=1
-                                if not self.check_not_effected(user_deck,chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                    if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                        user_decks.pop(range_i)
+                                        tmp_deck.pop(rand_i)
+                                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
+                                            tmp_deck[tmpdecktmp+rand_i]-=1
+                                        move_flag = True
+                                if move_flag ==True:
                                     if mine_or_other2 == 1:
                                         self.decks[deck_id]["mydeck"] = user_decks
                                     elif mine_or_other2 == 2:
@@ -5526,7 +5625,7 @@ class DuelObj:
                                     for tmpdecktmp in range(len(tmp_deck)-rand_i):
                                         tmp_deck[tmpdecktmp+rand_i]-=1
                                 effect_flag = False
-                                if not self.check_not_effected(user_deck,chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
+                                if not self.check_not_effected(user_deck,effect_user,effect_kind,"deck",deck_id,0,0,mine_or_other3):
                                     if not "remove" in cost_result:
                                         cost_result["remove"] = {}
                                     if not "deck" in cost_result["remove"]:
@@ -5562,27 +5661,33 @@ class DuelObj:
                             if not tmp_deck:
                                 return return_value
                             if cost == 0:
+                                move_flag = False
                                 if(monster_effect_text["move_how"] == 0):
                                     user_grave =self.copy_monster_from_grave(user_graves[tmp_deck[0]])
-                                    del user_graves[tmp_deck[0]]
-                                    del tmp_deck[0]
-                                    for tmpdecktmp in range(len(tmp_deck)):
-                                        tmp_deck[tmpdecktmp]-=1
+                                    if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                        del user_graves[tmp_deck[0]]
+                                        del tmp_deck[0]
+                                        for tmpdecktmp in range(len(tmp_deck)):
+                                            tmp_deck[tmpdecktmp]-=1
+                                        move_flag = True
                                 elif(monster_effect_text["move_how"] == 1):
                                     user_grave =self.copy_monster_from_grave(user_graves[tmp_deck[-1]])
-                                    user_graves.pop(tmp_deck[-1])
-                                    tmp_deck.pop()
+                                    if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                        user_graves.pop(tmp_deck[-1])
+                                        tmp_deck.pop()
                                 else:
                                     rand_i = random.randrange(len(tmp_deck))
                                     range_i =tmp_deck[rand_i]
 
                                     user_grave =self.copy_monster_from_grave(user_graves[range_i])
-                                    user_graves.pop(range_i)
-                                    tmp_deck.pop(rand_i)
-                                    for tmpdecktmp in range(len(tmp_deck)-rand_i):
-                                        tmp_deck[tmpdecktmp+rand_i]-=1
+                                    if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                        user_graves.pop(range_i)
+                                        tmp_deck.pop(rand_i)
+                                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
+                                            tmp_deck[tmpdecktmp+rand_i]-=1
+                                        move_flag = True
                                 effect_flag = False
-                                if not self.check_not_effected(user_grave,chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                if move_flag == True:
                                     if mine_or_other2 ==1:
                                         self.graves[deck_id]["mygrave"] = user_graves
                                     elif mine_or_other2 ==2:
@@ -5620,7 +5725,7 @@ class DuelObj:
                                     for tmpdecktmp in range(len(tmp_deck)-rand_i):
                                         tmp_deck[tmpdecktmp+rand_i]-=1
                                 effect_flag = False
-                                if not self.check_not_effected(user_grave,chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
+                                if not self.check_not_effected(user_grave,effect_user,effect_kind,"grave",deck_id,0,0,mine_or_other3):
                                     if not "remove" in cost_result:
                                         cost_result["remove"] = {}
                                     if not "grave" in cost_result["remove"]:
@@ -5655,26 +5760,33 @@ class DuelObj:
                             if not tmp_deck:
                                 return return_value
                             if cost == 0:
+                                move_flag = False
                                 if(monster_effect_text["move_how"] == 0):
                                     user_hand =self.copy_monster_from_hand(user_hands[tmp_deck[0]])
-                                    del user_hands[tmp_deck[0]]
-                                    del tmp_deck[0]
-                                    for tmpdecktmp in range(len(tmp_deck)):
-                                        tmp_deck[tmpdecktmp]-=1
+                                    if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                        del user_hands[tmp_deck[0]]
+                                        del tmp_deck[0]
+                                        for tmpdecktmp in range(len(tmp_deck)):
+                                            tmp_deck[tmpdecktmp]-=1
+                                        move_flag = True
                                 elif(monster_effect_text["move_how"] == 1):
                                     user_hand =self.copy_monster_from_hand(user_hands[tmp_deck[-1]])
-                                    user_hands.pop(tmp_deck[-1])
-                                    tmp_deck.pop()
+                                    if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                        user_hands.pop(tmp_deck[-1])
+                                        tmp_deck.pop()
+                                        move_flag = True
                                 else:
+
                                     rand_i =random.randrange(len(tmp_deck))
                                     range_i =tmp_deck[rand_i]
-
                                     user_hand =self.copy_monster_from_hand(user_hands[range_i])
-                                    user_hands.pop(range_i)
-                                    tmp_deck.pop(rand_i)
-                                    for tmpdecktmp in range(len(tmp_deck)-rand_i):
-                                        tmp_deck[tmpdecktmp+rand_i]-=1
-                                if not self.check_not_effected(user_hand,chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                    if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                        user_hands.pop(range_i)
+                                        tmp_deck.pop(rand_i)
+                                        move_flag = True
+                                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
+                                            tmp_deck[tmpdecktmp+rand_i]-=1
+                                if move_flag == True:
                                     if mine_or_other2 == 1:
                                         self.hands[deck_id]["myhand"] = user_hands
                                     elif mine_or_other2 ==2:
@@ -5712,7 +5824,7 @@ class DuelObj:
                                     tmp_deck.pop(rand_i)
                                     for tmpdecktmp in range(len(tmp_deck)-rand_i):
                                         tmp_deck[tmpdecktmp+rand_i]-=1
-                                if not self.check_not_effected(user_hand,chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
+                                if not self.check_not_effected(user_hand,effect_user,effect_kind,"hand",deck_id,0,0,mine_or_other3):
                                     if not "remove" in cost_result:
                                         cost_result["remove"] = {}
                                     if not "hand" in cost_result["remove"]:
@@ -5761,7 +5873,9 @@ class DuelObj:
                                     if flag_field_place == False:
                                         continue
                                     effect_flag = False
-                                    if not self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                    if field[x][y]["det"] is None:
+                                        continue
+                                    if not self.check_not_effected(field[x][y]["det"],effect_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                         continue
 
                                     if not self.validate_answer(field[x][y]["det"],monster_effect_det["monster"],exclude,duel):
@@ -6527,8 +6641,6 @@ class DuelObj:
         return_eternal = []
         monster_det = Monster.objects.get(id=monster["id"])
         eternals = monster_det.eternal_effect.all()
-        hands = Deck.objects.all()
-        hands = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -6585,8 +6697,6 @@ class DuelObj:
         return_eternal = []
         monster_det = Monster.objects.get(id=monster["id"])
         eternals = monster_det.eternal_effect.all()
-        graves = Deck.objects.all()
-        graves = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -6650,8 +6760,6 @@ class DuelObj:
         return_eternal = []
         monster_det = Monster.objects.get(id=monster["id"])
         eternals = monster_det.eternal_effect.all()
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -6827,8 +6935,6 @@ class DuelObj:
         return_trigger = []
         monster_det = Monster.objects.get(id=monster["id"])
         triggers  = monster_det.trigger.filter(priority = priority).all()
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -6852,8 +6958,6 @@ class DuelObj:
         return_trigger = []
         monster_det = Monster.objects.get(id=monster["id"])
         triggers  = monster_det.trigger.filter(priority = priority).all()
-        decks = Deck.objects.all()
-        graves = Grave.objects.all()
         phase = duel.phase
         turn = duel.user_turn
         place_id = monster["place_unique_id"]
@@ -6894,10 +6998,10 @@ class DuelObj:
         #        return False;
 
         if trigger.chain_kind == 0:
-            if chain< trigger.chain:
+            if chain > trigger.chain:
                 return None
         elif trigger.chain_kind == 1:
-            if chain > trigger.chain:
+            if chain < trigger.chain:
                 return None
         elif trigger.chain_kind == 2:
             if chain != trigger.chain:
@@ -6907,7 +7011,7 @@ class DuelObj:
                 return False
         if place != "":
             monster = self.get_monster(place,place_id,mine_or_other,user,deck_id,x,y)
-            if self.check_no_invoke(monster,user,effect_kind,place,deck_id,x,y,1,0):
+            if self.check_no_invoke(monster["det"],user,effect_kind,place,deck_id,x,y,1,0):
                 return False
         else:
             monster = None
@@ -6920,6 +7024,7 @@ class DuelObj:
                 return False
         elif trigger.none_timing == False:
                 return False
+
         if self.check_trigger_condition(trigger,user,monster):
             return True
         else:
@@ -7086,9 +7191,9 @@ class DuelObj:
                 if cond_val["init"] == 0:
                     value = tmp["value"]
                 elif cond_val["init"] == 1:
-                    value = tmp["init_value"]
+                    value = tmp["i_val"]
                 elif cond_val["init"] == 2:
-                    value = tmp["init_init_value"]
+                    value = tmp["i_i_val"]
                 if(cond_val["operator"] == "=" or cond_val["operator"] == "" ):
                     if int(value) != self.calculate_boland(cond_val["num"]):
                         tmp_flag= False
@@ -7295,8 +7400,9 @@ class DuelObj:
         duel.in_trigger_waiting = True
         flag = True
         trigger_waitings = json.loads(trigger_waiting)
-        trigger_waitings.sort(key=lambda x:x["priority"])
+        trigger_waitings.sort(key=lambda x:x["priority"],reverse=True)
 
+        count = 0
         for  trigger_waiting in trigger_waitings:
             trigger = Trigger.objects.get(id = trigger_waiting["trigger"])
             monster = trigger_waiting["monster"]
@@ -7322,9 +7428,10 @@ class DuelObj:
                 other_user =2
             else:
                 other_user =1
-            if self.check_launch_trigger(trigger,duel.phase,duel.user_turn,user,other_user,mine_or_other,place,place_id,deck_id,x,y,True,move_from,place_from,deck_id_from,from_x,from_y):
-                self.invoke_trigger(trigger,place,monster,mine_or_other,user,deck_id)
 
+            count+=1
+            if self.check_launch_trigger(trigger,duel.phase,duel.user_turn,user,other_user,mine_or_other,place,place_id,deck_id,x,y,True,move_from,place_from,deck_id_from,from_x,from_y):
+                self.invoke_trigger(trigger,place,monster,mine_or_other,user,deck_id )
         duel.trigger_waiting = "[]"
         if flag == True:
             duel.in_trigger_waiting = False

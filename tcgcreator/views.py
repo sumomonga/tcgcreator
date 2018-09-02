@@ -262,23 +262,36 @@ def pac_diagram(request,pac_id):
     effect_id_ary = []
     pac_ary = []
     pac_id_ary = []
-    effect_ary.append(effect.monster_effect_name)
+    effect_name = effect.monster_effect_name
+    effect_name= effect_name.replace(" ","")
+    effect_name = effect_name.replace("1","1")
+    effect_name = effect_name.replace("２","2")
+    effect_name = effect_name.replace("３","3")
+    effect_name = effect_name.replace("４","4")
+    effect_name = effect_name.replace("５","5")
+    effect_name = effect_name.replace("６","6")
+    effect_name = effect_name.replace("７","7")
+    effect_name = effect_name.replace("８","8")
+    effect_name = effect_name.replace("９","9")
+    effect_name = effect_name.replace("０","0")
+    effect_name = effect_name.replace("１","0")
+    effect_ary.append(effect_name)
     effect_id_ary.append(effect.id)
     result_html2 = "graph TD\n";
     result_html = "";
     if effect is not None:
         result_html += pac_diagram_det(effect,effect_ary,effect_id_ary,pac_ary,pac_id_ary)
-    result_html = result_html.replace("１","1")
-    result_html = result_html.replace("２","2")
-    result_html = result_html.replace("３","3")
-    result_html = result_html.replace("４","4")
-    result_html = result_html.replace("５","5")
-    result_html = result_html.replace("６","6")
-    result_html = result_html.replace("７","7")
-    result_html = result_html.replace("８","8")
-    result_html = result_html.replace("９","9")
-    result_html = result_html.replace("０","0")
-    result_html = result_html.replace(" ","")
+    result_html = result_html.replace("１","1",100)
+    result_html = result_html.replace("２","2",100)
+    result_html = result_html.replace("３","3",100)
+    result_html = result_html.replace("４","4",100)
+    result_html = result_html.replace("５","5",100)
+    result_html = result_html.replace("６","6",100)
+    result_html = result_html.replace("７","7",100)
+    result_html = result_html.replace("８","8",100)
+    result_html = result_html.replace("９","9",100)
+    result_html = result_html.replace("０","0",100)
+    result_html = result_html.replace(" ","",100)
     result_html = result_html2 + result_html
 
     context = {}
@@ -348,7 +361,7 @@ def pac_diagram_det2(pac,effect_ary,effect_id_ary,pac_ary,pac_id_ary):
     pac_name = pac_name.replace("８","8")
     pac_name = pac_name.replace("９","9")
     pac_name = pac_name.replace("０","0")
-    pac_name = pac_name.replace("１","0")
+    pac_name = pac_name.replace("１","1")
     result_html = ""
 
     if pac.pac_next is not None:
@@ -365,7 +378,7 @@ def pac_diagram_det2(pac,effect_ary,effect_id_ary,pac_ary,pac_id_ary):
         pac_name1 = pac_name1.replace("８","8")
         pac_name1 = pac_name1.replace("９","9")
         pac_name1 = pac_name1.replace("０","0")
-        pac_name1 = pac_name1.replace("１","0")
+        pac_name1 = pac_name1.replace("１","1")
         result_html += pac_name+"-->"+pac_name1 +"\n"
         if not pac_next.id in pac_id_ary:
             pac_ary.append(pac_name1)
@@ -1181,7 +1194,7 @@ def makedeck(req):
 
         i = 0
         for monster_variable in monster_variables:
-            if(req.POST["monster_variable"+str(monster_variable.id)] != ""):
+            if("monster_variable"+str(monster_variable.id) in req.POST and req.POST["monster_variable"+str(monster_variable.id)] != ""):
                 if(monster_variable.monster_variable_kind_id.id < 2):
                     join_sql += " left join tcgcreator_monsteritem as i"+str(i)+" on m.id = i"+str(i)+".monster_id_id"
                     if(req.POST[str(monster_variable.id)+"_how"] == "least"):
