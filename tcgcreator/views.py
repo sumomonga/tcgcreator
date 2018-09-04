@@ -1222,10 +1222,25 @@ def makedeck(req):
             i+=1;
     if where_sql == "":
         where_sql = "1"
-    monster = Monster.objects.raw("select * from tcgcreator_monster as m "+ join_sql + " where "+ where_sql,add_variable)
+    if "sort" not in req.POST or req.POST["sort"] == "0":
+        sort = Config.objects.first().default_sort
+        sort = sort.id
+    else:
+        sort = int(req.POST["sort"])
+    if "desc" in req.POST and req.POST["desc"] == "1":
+        desc = "desc"
+    else:
+        desc = ""
+    if where_sql != "":
+        where_sql +=  " and "
+    where_sql += " for_order.monster_variables_id_id = "+ str(sort) +" ";
+    join_sql += " left join tcgcreator_monsteritem as for_order on m.id = for_order.monster_id_id"
+    order_by = " order by for_order.monster_item_text " + desc
+
+    monster = Monster.objects.raw("select distinct m.id,m.*, for_order.monster_item_text from tcgcreator_monster as m "+ join_sql + " where "+ where_sql + order_by,add_variable)
     user_deck = UserDeck.objects.all().filter(user=req.user,deck_group = user_deck_group)
     #sql = "select * from tcgcreator_monster as m "+ join_sql + " where "+ where_sql
-    return render(req,'tcgcreator/makedeck.html',{'MonsterVariables':monster_variables,'Monster':monster,'UserDeck':user_deck,'Deck':decks,'UserDeckGroup':user_deck_group,"UserDeckGroups":user_deck_groups,"DefaultDeckGroups":default_deck_groups})
+    return render(req,'tcgcreator/makedeck.html',{'MonsterVariables':monster_variables,'Monster':monster,'UserDeck':user_deck,'Deck':decks,'UserDeckGroup':user_deck_group,"UserDeckGroups":user_deck_groups,"DefaultDeckGroups":default_deck_groups,"sort":sort,"desc":desc})
 
 def get_monster_deck_type(req):
     num = req.POST["num"]
@@ -1251,38 +1266,50 @@ def get_trigger(req):
         return_html += '<option value="'+str(trigger.id)+'">'+trigger.trigger_name+'</option>'
     return HttpResponse(return_html)
 def choose(request):
+    reenter1 = 0
+    reenter2 = 0
+    reenter3 = 0
     duel_1 = Duel.objects.filter(id=1).get()
     if duel_1.user_2 is None:
         duel_1.winner = 0
+        watch_1 = 0
+    else:
+        watch_1 = 1
     duel_2 = Duel.objects.filter(id=2).get()
     if duel_2.user_2 is None:
         duel_2.winner = 0
+        watch_2 = 0
+    else:
+        watch_2 = 1
     duel_3 = Duel.objects.filter(id=3).get()
     if duel_3.user_2 is None:
         duel_3.winner = 0
+        watch_3 = 0
+    else:
+        watch_3 = 1
     config = Config.objects.get()
     limit_time = config.limit_time
     room_text1 = ""
     room_text2 = ""
     room_text3 = ""
     if duel_1.winner != 0:
-        room_text1 += duel_1.user_1.username +  "対" + duel_1.user_2.username+"\n"
-    if duel_1.winner == 1:
-        room_text1 += duel_1.user_1.username+ "の勝利\n"
-    elif duel_1.winner == 2:
-        room_text1 += duel_1.user_2.username+ "の勝利\n"
+        room_text1 += duel_1.user_1.first_name +  "対" + duel_1.user_2.first_name+"\n"
+        if duel_1.winner == 1:
+            room_text1 += duel_1.user_1.first_name+ "の勝利\n"
+        elif duel_1.winner == 2:
+            room_text1 += duel_1.user_2.first_name+ "の勝利\n"
     if duel_2.winner != 0:
-        room_text2 += duel_2.user_1.username +  "対" + duel_2.user_2.username+"\n"
+        room_text2 += duel_2.user_1.first_name +  "対" + duel_2.user_2.first_name+"\n"
     if duel_2.winner == 1:
-        room_text2 += duel_2.user_1.username+ "の勝利\n"
+        room_text2 += duel_2.user_1.first_name+ "の勝利\n"
     elif duel_2.winner == 2:
-        room_text2 += duel_2.user_2.username+ "の勝利\n"
+        room_text2 += duel_2.user_2.first_name+ "の勝利\n"
     if duel_3.winner != 0:
-        room_text3 += duel_3.user_1.username +  "対" + duel_3.user_2.username+"\n"
+        room_text3 += duel_3.user_1.first_name +  "対" + duel_3.user_2.first_name+"\n"
     if duel_3.winner == 1:
-        room_text3 += duel_3.user_1.username+ "の勝利\n"
+        room_text3 += duel_3.user_1.first_name+ "の勝利\n"
     elif duel_3.winner == 2:
-        room_text3 += duel_3.user_2.username+ "の勝利\n"
+        room_text3 += duel_3.user_2.first_name+ "の勝利\n"
     if duel_1.waiting == True:
         wait_kind1 = 0
     elif duel_1.winner != 0 and time() - duel_1.end_time > limit_time:
@@ -1296,6 +1323,10 @@ def choose(request):
         duel_1.save()
         wait_kind1  = 0
     elif duel_1.winner == 0:
+        room_text1 += "対戦中"+duel_1.user_1.first_name+"対"+duel_1.user_2.first_name
+        if request.user == duel_1.user_1 or request.user == duel_1.user_2:
+            reenter1 = 1
+
         wait_kind1 = 1
     if duel_2.waiting == True:
         wait_kind2 = 0
@@ -1310,6 +1341,9 @@ def choose(request):
         duel_2.save()
         wait_kind2  = 0
     elif duel_2.winner == 0:
+        room_text2 += "対戦中"+duel_2.user_1.first_name+"対"+duel_2.user_2.first_name
+        if request.user == duel_2.user_1 or request.user == duel_2.user_2:
+            reenter2 = 1
         wait_kind2 = 1
     if duel_3.waiting == True:
         wait_kind3 = 0
@@ -1324,14 +1358,17 @@ def choose(request):
         duel_3.save()
         wait_kind3  = 1
     elif duel_3.winner == 0:
+        room_text3 += "対戦中"+duel_3.user_1.first_name+"対"+duel_3.user_2.first_name
+        if request.user == duel_3.user_1 or request.user == duel_3.user_2:
+            reenter3 =1
         wait_kind3 = 0
     if duel_1.winner == 0 and duel_1.waiting == True and duel_1.user_1:
-        room_text1 += "対戦募集中"+duel_1.user_1.username
+        room_text1 += "対戦募集中"+duel_1.user_1.first_name
     if duel_2.winner == 0 and duel_2.waiting == True and duel_2.user_1:
-        room_text2 += "対戦募集中"+duel_2.user_1.username
+        room_text2 += "対戦募集中"+duel_2.user_1.first_name
     if duel_3.winner == 0 and duel_3.waiting == True and duel_3.user_1:
-        room_text3 += "対戦募集中"+duel_3.user_1.username
-    return render(request,'tcgcreator/choose.html',{'room_text1':room_text1,'room_text2':room_text2,'room_text3':room_text3,'wait_kind1':wait_kind1,'wait_kind2':wait_kind2,'wait_kind3':wait_kind3})
+        room_text3 += "対戦募集中"+duel_3.user_1.first_name
+    return render(request,'tcgcreator/choose.html',{'room_text1':room_text1,'room_text2':room_text2,'room_text3':room_text3,'wait_kind1':wait_kind1,'wait_kind2':wait_kind2,'wait_kind3':wait_kind3,'watch_1':watch_1,'watch_2':watch_2,'watch_3':watch_3,"reenter1":reenter1,"reenter2":reenter2,"reenter3":reenter3})
 
 def get_tcg_timing(req):
     timings = Timing.objects.all()

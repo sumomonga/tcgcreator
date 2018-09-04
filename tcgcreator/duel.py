@@ -6990,12 +6990,12 @@ class DuelObj:
         effect_kind = trigger.trigger_kind
         if trigger.phase is not None and trigger.phase != phase:
             return None
-        #if trigger.mine_or_other == 2:
-        #    if  mine_or_other2 != 2:
-        #        return False;
-        #elif trigger.mine_or_other == 1:
-        #    if  mine_or_other2 != 1:
-        #        return False;
+        if trigger.mine_or_other == 2:
+            if  mine_or_other2 != 2:
+                return False;
+        elif trigger.mine_or_other == 1:
+            if  mine_or_other2 != 1:
+                return False;
 
         if trigger.chain_kind == 0:
             if chain > trigger.chain:
