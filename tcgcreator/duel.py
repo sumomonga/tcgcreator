@@ -1,4 +1,4 @@
-from .models import Config,MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,Field,UserDeck,UserDeckGroup,Deck,UserDeck,UserDeckGroup,UserDeckChoice,Duel,Phase,Trigger,Grave,Hand,MonsterEffect,MonsterEffectWrapper,GlobalVariable,Cost,CostWrapper,DuelDeck,DuelGrave,DuelHand,FieldSize,TriggerTiming,Timing,Pac,PacWrapper,PacCost,PacCostWrapper,EternalEffect,VirtualVariable,EternalWrapper
+from .models import Config,MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,Field,UserDeck,UserDeckGroup,Deck,UserDeck,UserDeckGroup,UserDeckChoice,Duel,Phase,Trigger,Grave,Hand,MonsterEffect,MonsterEffectWrapper,GlobalVariable,Cost,CostWrapper,DuelDeck,DuelGrave,DuelHand,FieldSize,TriggerTiming,Timing,Pac,PacWrapper,PacCost,PacCostWrapper,EternalEffect,VirtualVariable,EternalWrapper,Flag
 from django.http import HttpResponse,HttpResponseRedirect
 from .custom_functions  import init_monster_item,create_user_deck,create_user_deck_group,copy_to_deck,create_user_deck_choice,create_user_deck_det
 from django.db.models import Q
@@ -17,6 +17,11 @@ from pprint import pprint
 import numpy as np
 from time import time
 class DuelObj:
+
+    def __init__(self,room_number):
+        flag = Flag.objects.get(id=room_number)
+        #if flag.flag == True:
+        #    exit(1)
     def copy_monster_from_deck(self,monster):
         return monster
     def copy_monster_from_grave(self,monster):
@@ -707,13 +712,9 @@ class DuelObj:
         if(trigger.turn != 0):
             if(duel.user_turn == 1 and user==1 or duel.user_turn == 2 and user == 2):
                 if(trigger.turn != 1):
-                    pprint("a")
-                    pprint(trigger)
                     return False
             elif(duel.user_turn == 2 and user==1 or duel.user_turn == 1 and user == 2):
                 if(trigger.turn != 2):
-                    pprint("b")
-                    pprint(trigger)
                     return False
         if(trigger.trigger_condition == ""):
             return True
@@ -1722,7 +1723,7 @@ class DuelObj:
 
         if self.modify_hand_info(return_value["hand_info"],hands.count(),user,other_user,priority,1):
             return True
-        field = self.field
+        field = copy.deepcopy(self.field)
         if self.modify_field_info(field,user,other_user,priority,1):
             return True
         return False
@@ -1765,6 +1766,9 @@ class DuelObj:
                     self.win_the_game(2)
 
     def save_all(self,user,other_user,room_number):
+        flag = Flag.objects.get(id=room_number)
+        flag.flag = False
+        flag.save()
         duel = self.duel
         config = Config.objects.get()
         game_name = config.game_name
@@ -2533,7 +2537,7 @@ class DuelObj:
         eternal_det = json.loads(duel.eternal_det)
         flag = True
         for none_chain_effect in none_chain_effects:
-            if none_chain_effect.id in duel.eternal_det:
+            if none_chain_effect.id in eternal_det:
                 continue
             kinds = none_chain_effect.monster_effect_kind
             if self.invoke_no_chain_effect(none_chain_effect,user,other_user,kinds) == 0:
@@ -2843,11 +2847,14 @@ class DuelObj:
 
     def check_monster_effect_condition(self,monster_effect_conditions,cost=0):
         duel = self.duel
-        chain_user = json.loads(duel.chain_user)
         if cost == 0:
+            chain_user = json.loads(duel.chain_user)
             user = chain_user[str(duel.chain-1)]
-        else:
+        elif cost == 1:
+            chain_user = json.loads(duel.chain_user)
             user = chain_user[str(duel.chain)]
+        else:
+            user = self.user
         if "monster" in monster_effect_conditions:
             if(self.check_monster_condition(monster_effect_conditions["monster"],user,False) == False):
                 return False
@@ -2862,6 +2869,8 @@ class DuelObj:
                     mine_or_other = int(variable[2])
                     variable_name = variable[1]
                     variable = json.loads(duel.global_variable)
+                    virtual_variables = self.virtual_variables
+                    variable.update(virtual_variables)
                     if mine_or_other == 0:
                         if(variable_condition["variable_equation"][key] == "="):
                             if not variable[variable_name]["value"]==self.calculate_boland(variable_condition["variable_equation_val"][key]):
@@ -3642,7 +3651,6 @@ class DuelObj:
                                 place_id = place2["place_id"]
                                 if(field[x][y]["det"]["place_unique_id"] != place_id):
                                     return "error"
-                                effect_flag = False
                                 if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,1):
                                     continue;
                                 for index in range(len(monster_effect["monster_variable_change_how"])):
@@ -3817,6 +3825,7 @@ class DuelObj:
                                     self.cost_result = cost_result
 
 
+        field=self.field
         for monster_effect_det2 in monster_effect_monster:
             monster_effect_det = monster_effect_det2["monster"]
             field_tmp = []
@@ -4203,7 +4212,6 @@ class DuelObj:
                                 continue
                             if field[x][y]["det"] is None:
                                 continue
-                            effect_flag = False
                             if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
                                 continue
                             if( self.validate_answer(field[x][y]["det"],monster_effect_det,exclude,duel)):
@@ -4215,7 +4223,12 @@ class DuelObj:
                                         if monster_effect["monster_variable_change_how"][index2] == 1:
                                             field[x][y]["det"]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( fields[x][y]["det"]["variables"][variable_name]["value"] ))
                                         if monster_effect["monster_variable_change_how"][index2] == 2:
+                                            pprint(field[x][y]["det"]["variables"][variable_name]["value"])
+                                            pprint(x)
+                                            pprint(y)
+                                            pprint(variable_name)
                                             field[x][y]["det"]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]))
+                                            pprint(field[x][y]["det"]["variables"][variable_name]["value"])
                                     else:
                                         cost_result = self.cost_result
                                         if not "variable" in cost_result:
@@ -4232,6 +4245,7 @@ class DuelObj:
                                         cost_result_tmp["change_variable_how"]= monster_effect["monster_variable_change_how"][index2]
                                         cost_result["variable"]["field"].append(cost_result_tmp)
                                         self.cost_result = cost_result
+
         self.field = field
     def change_monster_variable_cost(self,cost_text,effect_kind):
         self.change_monster_variable(cost_text,effect_kind,1)
@@ -6577,17 +6591,17 @@ class DuelObj:
                 if(field[x][y]["det"] is None):
                     field[x][y]["hide"] = False
                     continue
-                if int(field[x][y]["det"]["variables"]["show"]["value"]) == "1":
+                if int(field[x][y]["det"]["variables"]["show"]["value"]) == 1:
                         field[x][y]["det"] = None
                         field[x][y]["hide"] = True
         return field
     def modify_field_info(self,field,user,other_user,priority,mode=0):
         for x in range(len(field)):
             for y in range(len(field[x])):
-                if (user == 1 and int(field[x][y]["mine_or_other"]) == 1) or (user == 2 and int(field[x][y]["mine_or_other"]) == 2) :
+                if int(field[x][y]["mine_or_other"]) == 1:
 
                     mine_or_other = 1
-                elif (user == 2 and int(field[x][y]["mine_or_other"]) == 1) or (user == 1 and int(field[x][y]["mine_or_other"]) == 2) :
+                elif field[x][y]["mine_or_other"] == 2:
                     mine_or_other = 2
                 else:
                     mine_or_other = 0
@@ -6595,7 +6609,7 @@ class DuelObj:
                     field[x][y]["hide"] = False
                     continue
                 if(int(field[x][y]["mine_or_other"]) == other_user ):
-                    if int(field[x][y]["det"]["variables"]["show"]["value"]) == "1":
+                    if int(field[x][y]["det"]["variables"]["show"]["value"]) == 1:
                         field[x][y]["det"] = None
                         field[x][y]["hide"] = True
                 if(field[x][y])["det"] is not None:

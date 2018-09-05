@@ -11,7 +11,7 @@ from pprint import pprint
 def watch_det(request,duelobj = None):
     room_number = int(request.POST["room_number"])
     duel=Duel.objects.get(id=room_number);
-    duelobj =  DuelObj()
+    duelobj =  DuelObj(room_number)
     duelobj.duel = duel;
     duelobj.room_number = room_number
     duelobj.in_execute = False
