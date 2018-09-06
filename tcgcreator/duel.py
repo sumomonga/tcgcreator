@@ -3173,13 +3173,13 @@ class DuelObj:
                 log_tmp = self.write_log(monster_effect.log,user)
                 duel.log_turn += log_tmp
                 duel.log += log_tmp
-                self.win_the_game()
+                self.win_the_game(2)
                 monster_effect= monster_effect.monster_effect_next
             elif monster_effect_unwrap.monster_effect_val == 23:
                 log_tmp = self.write_log(monster_effect.log,user)
                 duel.log_turn += log_tmp
                 duel.log += log_tmp
-                self.lose_the_game()
+                self.lose_the_game(2)
                 monster_effect= monster_effect.monster_effect_next
         return 0
     def invoke_monster_effect(self,monster_effect,decks,graves,kinds):
@@ -3474,9 +3474,9 @@ class DuelObj:
                     tmp_log = self.duel.user_2.first_name
             elif dummy[1] == "2":
                 if user == 1:
-                    tmp_log = self.user2.first_name
+                    tmp_log = self.duel.user_2.first_name
                 else:
-                    tmp_log = self.user1.first_name
+                    tmp_log = self.duel.user_1.first_name
             log_text = log_text.replace(log_calc.group(),tmp_log)
 
 
@@ -4223,12 +4223,7 @@ class DuelObj:
                                         if monster_effect["monster_variable_change_how"][index2] == 1:
                                             field[x][y]["det"]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( fields[x][y]["det"]["variables"][variable_name]["value"] ))
                                         if monster_effect["monster_variable_change_how"][index2] == 2:
-                                            pprint(field[x][y]["det"]["variables"][variable_name]["value"])
-                                            pprint(x)
-                                            pprint(y)
-                                            pprint(variable_name)
                                             field[x][y]["det"]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]))
-                                            pprint(field[x][y]["det"]["variables"][variable_name]["value"])
                                     else:
                                         cost_result = self.cost_result
                                         if not "variable" in cost_result:
@@ -7012,10 +7007,10 @@ class DuelObj:
                 return False;
 
         if trigger.chain_kind == 0:
-            if chain > trigger.chain:
+            if chain < trigger.chain:
                 return None
         elif trigger.chain_kind == 1:
-            if chain < trigger.chain:
+            if chain > trigger.chain:
                 return None
         elif trigger.chain_kind == 2:
             if chain != trigger.chain:
