@@ -1,0 +1,22 @@
+<html>
+<head></head>
+
+<body>
+{% block content %}
+  <h2>ユーザー登録</h2>
+  <form method="post">
+    {% csrf_token %}
+ {{ form.non_field_errors }}
+    {{ form.errors.username }}
+    ユーザーID {{ form.username }}<br>
+    {{ form.errors.password1 }}
+    パスワード{{ form.password1 }}<br>
+    {{ form.errors.password2 }}
+    パスワード確認{{ form.password2 }}<br>
+    {{ form.errors.first_name }}
+    ユーザーネーム{{ form.first_name }}
+    <button type="submit">Sign up</button>
+  </form>
+{% endblock %}
+</body>
+</html>

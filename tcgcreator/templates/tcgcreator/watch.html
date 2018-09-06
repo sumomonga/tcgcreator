@@ -1,0 +1,346 @@
+{% load lookup %}
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+.control input[type="button"]{
+	height: 30px;
+}
+table .field td{
+	border-collapse:separate;
+	border:1px solid;
+	width:120px;
+	height:10px;
+	}
+table .card td{
+	border-collapse:separate;
+	border:1px solid;
+	width:120px;
+	height:10px;
+	}
+</style>
+{% load static %}
+<script type="text/javascript" src="{% static 'js/jquery-2.2.0.min.js'%}"></script>
+<script type="text/javascript" src="{% static 'js/ajax.js'%}"></script>
+<script type="text/javascript">
+	var static_url = "{% get_static_prefix %}";
+	var gray_out = "{{gray_out.monster_variable_name}}";
+	var show_img = true;
+	var music= new Audio();
+	var music_name ="";
+	var game_field;
+	var timer = 0;
+	var timer_id;
+	var timer_for_win_and_lose=0;
+	$(document).ready(function(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'watch_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+});
+function Success(data){
+
+	data = JSON.parse(data);
+	$("#message").html("");
+	MakeLeftColumn(data);
+	MakeOpponentHands(data);
+	MakeRightColumn(data);
+	MakeHands(data);
+	MakeFields(data);
+	WriteLog(data);
+	if(data["ask"] != false){
+		ask();
+		
+	}else if(data["ask_org"] == true ){
+	    setTimeout(Wait,5000);
+	}else if(data["appoint"] == false ){
+	    setTimeout(Wait,5000);
+	}
+}
+    function WriteLog(data){
+        log = data["log"].replace(/\n/g,"<br>");
+        console.log(log);
+        $("#log").html(log);
+
+    }
+	function MakeFields(data){
+		var fields = data["field_info"];
+		var user = data["user"];
+		var x,y;
+		var i;
+		for(x = 0;x<fields.length;x++){
+			for(y = 0;y<fields[x].length;y++){
+				
+				if(fields[x][y]["det"] == null){
+					if(fields[x][y]["hide"] == true){
+					if(user == 1){
+						$("#"+x+"_"+y).html('<div style="width:100px;height:140px;background-color:black"></div>');
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html('<div style="width:100px;height:140px;background-color:black"></div>');
+					}
+					}else{
+					if(user == 1){
+						$("#"+x+"_"+y).html("");
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html("");
+					}
+					}
+				}else{
+					if(show_img == false){
+					result="<table><tr><td colspan=\"2\">"+fields[x][y]["det"]["monster_name"]+"</td></tr>";
+					for(i=0;i<fields[x][y]["det"]["variables"].length;i++){
+							result += "<tr><td>"+fields[x][y]["det"]["variables"][i]["name"]+"</td><td>"+fields[x][y]["det"]["variables"][i]["str"]+"</td></tr>";
+					}
+					}else{
+						gray_flag = false;
+							if(parseInt(fields[x][y]["det"]["variables"][gray_out]["value"]) >= 1){
+								gray_flag = true;
+							}else{
+								gray_flag = false;
+							}
+						if(gray_flag == true){
+							result="<table><tr><td><img style=\"opacity:0.4;background:gray\" width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></td></tr>";
+						}else{
+							result="<table><tr><td><img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></td></tr>";
+						}
+					}
+					if(fields[x][y]["det"]["trigger"] != undefined){
+						for(k=0;k<fields[x][y]["det"]["trigger"].length;k++){
+							result += "<br><input type=\"button\" onclick=\"sendFieldTrigger('"+x+"','"+y+"','"+fields[x][y]["det"]["place_unique_id"]+"','"+fields[x][y]["det"]["trigger"][k]["id"]+"',1)\" value=\""+fields[x][y]["det"]["trigger"][k]["name"]+"\">";
+						}
+					}
+					result+="</table>";
+					if(user == 1){
+						$("#"+x+"_"+y).html(result);
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+					}
+				}
+			}
+		}
+	}
+		
+	function MakeHands(data){
+		var hands = data["hand_info"];
+		var i,j;
+		var result="<table style=\"display:inline;text-align:center\">";
+		for(i=0;i<hands.length;i++){
+			result += "<tr>"
+			if(hands.length!= 1){
+				result+="<td>"+hands[i]["hand_name"]+"</td>";
+			}
+			result+="<td>";
+			if(hands[i]["myhand"] == undefined){
+			    for(j=0;j<hands[i]["myhandnum"];j++){
+				    result += "■ ";
+			    }
+			}else{
+			    for(j=0;j<hands[i]["myhandnum"];j++){
+
+				    result+="<td>";
+				    img_url = hands[i]["myhand"][j]["img"];
+				    result+="<img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+img_url+"\">";
+				    if(hands[i]["myhand"][j]["trigger"] != undefined){
+			            for(k=0;k<hands[i]["myhand"][j]["trigger"].length;k++){
+					        result += "<br><input type=\"button\" onclick=\"sendHandTrigger('"+(i+1)+"','"+hands[i]["otherhand"][j]["place_unique_id"]+"','"+hands[i]["otherhand"][j]["trigger"][k]["id"]+"',1)\" value=\""+hands[i]["otherhand"][j]["trigger"][k]["name"]+"\">";
+					    }
+				    }
+				}
+				result+="</td>";
+			}
+			result += "</td></tr>";
+		}
+			
+				
+		$("#hands").html(result);
+	}
+		
+	function MakeOpponentHands(data){
+		var hands = data["hand_info"];
+		var i,j;
+		var result="<table style=\"display:inline;text-align:center\">";
+		for(i=0;i<hands.length;i++){
+			result += "<tr>"
+			if(hands.length!= 1){
+				result+="<td>"+hands[i]["hand_name"]+"</td>";
+			}
+			result+="<td>";
+			if(hands[i]["otherhand"] == undefined){
+			    for(j=0;j<hands[i]["otherhandnum"];j++){
+				    result += "■ ";
+			    }
+			}else{
+			    for(j=0;j<hands[i]["otherhandnum"];j++){
+
+				    result+="<td>";
+				    img_url = hands[i]["otherhand"][j]["img"];
+				    result+="<img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+img_url+"\">";
+				    if(hands[i]["otherhand"][j]["trigger"] != undefined){
+			            for(k=0;k<hands[i]["otherhand"][j]["trigger"].length;k++){
+					        result += "<br><input type=\"button\" onclick=\"sendHandTrigger('"+(i+1)+"','"+hands[i]["otherhand"][j]["place_unique_id"]+"','"+hands[i]["otherhand"][j]["trigger"][k]["id"]+"',1)\" value=\""+hands[i]["otherhand"][j]["trigger"][k]["name"]+"\">";
+					    }
+				    }
+				}
+				result+="</td>";
+			}
+			result += "</td></tr>";
+
+				
+		}
+		$("#opponent_hands").html(result);
+	}
+		
+	
+	function MakeLeftColumn(data){
+		var decks = data["deck_info"];
+		var graves = data["grave_info"];
+		//var variables = data["variables"];
+		var html="";
+		var i,j;
+
+		if(data["turn"] != 0){
+			html += "ターン"+ data["user_name"+ data["turn"]]+"<br>" ;
+		}
+		for(i=0;i<decks.length;i++){
+			html+=decks[i]["deck_name"]+"<br>";
+			if(decks[i]["commondecknum"] != undefined){
+				html+=decks[i]["commondecknum"]+"<br>";
+			}else{
+				html+=data["user_name1"]+" ";
+				html+=decks[i]["mydecknum"]+"<br>";
+				html+=data["user_name2"]+" ";
+				html+=decks[i]["otherdecknum"]+"<br>";
+			}
+		}
+		for(i=0;i<graves.length;i++){
+			html+=graves[i]["grave_name"]+"<br>";
+			if(graves[i]["commongravenum"] != undefined){
+				if(graves[i]["commongrave"] != undefined){
+					html += graves[i]["grave_name"]+"<br>";
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&grave="+i+"\">共通</a> "+graves[i]["commongravenum"]+"<br>";
+				}
+			}else{
+				if(graves[i]["mygrave"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&user_number="+data["user"]+"&grave="+i+"\">"+data["user_name1"]+" "+graves[i]["mygravenum"]+"</a><br>";
+				}else{
+					html+=data["user_name1"]+" ";
+					html+=graves[i]["mygravenum"]+"<br>";
+				}	
+				if(graves[i]["othergrave"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&user_number="+data["other_user"]+"&grave="+i+"\">"+data["user_name2"]+" "+graves[i]["othergravenum"]+"</a><br>";
+				}else{
+					html+=data["user_name2"]+" ";
+					html+=graves[i]["othergravenum"]+"<br>";
+				}	
+			}
+		}
+	$("#left_column").html(html);
+	
+}
+	
+	function MakeRightColumn(data){
+		var html="";
+		var color = "black";
+		var turn;
+		var user_number = parseInt(data["user"]);
+		if(user_number == 1){
+			if(data["turn"] == 1){
+				turn = 1;
+			}else{
+				turn = 2;
+			}	
+		}else{
+	
+			if(data["turn"] == 2){
+				turn = 1;
+			}else{
+				turn = 2;
+			}	
+		}
+	
+		{% for phase in Phases %}
+		if(data["phase"] == {{phase.id}} ){
+			color = "green";
+		}else{
+			color = "black";
+		}
+		html += "<span style=\"color:"+ color+"\">{{phase.phase_name}}</span>";
+		html += "<br>";
+		{% endfor %}
+		var variable_id = [];
+		var i=0;
+		{% for variable in Variable %}
+			html += "{{variable.variable_name}}<br>";
+			if({{variable.mine_or_other}} == 1){
+				html += data["variable"]["{{variable.variable_name}}"]["value"];
+			}else{
+				html+=data["user_name1"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["user"]+"_value"]+"<br>";
+				html+=data["user_name2"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["other_user"]+"_value"]+"<br>";
+			}
+		
+		{% endfor %}
+		{% for variable in VirtualVariable %}
+			html += "{{variable.variable_name}}<br>";
+			if({{variable.mine_or_other}} == 1){
+				html += data["variable"]["{{variable.variable_name}}"]["value"];
+			}else{
+				html+=data["user_name1"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["user"]+"_value"]+"<br>";
+				html+=data["user_name2"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["other_user"]+"_value"]+"<br>";
+			}
+
+		{% endfor %}
+
+
+		$("#right_column").html(html);
+		
+	}
+</script>
+</head>
+<body>
+<table id="field" width="100%">
+<tr><td id="left_column" valign="top" nowarp="">
+	
+</td><td align="center" valign="top">
+<br><span id="player"></span><br>
+<br><span id="opponent_hands"></span><br>
+<table class="field"> 
+{% for y in range_y %}
+<tr>
+{% for x in range_x %}
+<td id="{{x}}_{{y}}" class=" {% for tmp in y|get_field:x %} {{tmp}} {% endfor %}">
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+	
+<tr ><td style="text-align:center" colspan="5" id="log"> </td></tr>
+<tr ><td style="text-align:center" colspan="5" id="message"> </td></tr>
+<tr><td align="center" colspan="5">
+<br><span  style="text-align:center" id="player2"></span><br>
+</td></tr>
+</table>
+</td><td id="right_column" align="center" valign="top" nowarp=""></td></tr>
+</table >
+<div style="text-align:center;margin:0 auto" id="hands">
+</div>
+<div class = "control">
+<div id="timer"></div>
+</div>
+</div>
+<div style="text-align:center"><a href="{% url 'choose' %}">戻る</a></div>
+<div style="border:1px solid #000;text-align:center;height:30px;overflow-y:scroll" id="message2" ></div>
+
+</body>
+</html>

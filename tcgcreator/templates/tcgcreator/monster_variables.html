@@ -1,0 +1,23 @@
+{% load lookup %}
+<h1>モンスター変数設定</h1>
+<a href="/tcgcreator/new_monster_variables">新規</a></td>
+<table>
+<tr><th>変数名</th><th>表示名</th><th>変数タイプ</th><th>表示フラグ</th><th>優先度</th><th>デフォルト値</th><th>編集</th><th>削除</th></tr>
+{% for monster_variable in MonsterVariables %}
+	<tr>
+	<td>{{ monster_variable.monster_variable_name }}</td>
+	<td>{{ monster_variable.monster_variable_label }}</td>
+	<td>{{ monster_variable_kind|lookup:monster_variable.monster_variable_kind_id.id }} </td>
+	<td>{{ monster_variable.monster_variable_show }}</td>
+	<td>{{ monster_variable.priority }}</td>
+	{% if monster_variable_kind < 3 %}
+		<td>{{ monster_item.monster_item_text }} </td>
+	{% else %}
+		<td>{{ monster_variable.monster_variable_kind_id.id|joincomma:monster_variable.default_value |lookup3:MonsterVariablesSentences }} </td>
+	{% endif %}
+	<td><a href="/tcgcreator/edit_monster_variables/{{ monster_variable.id}}">編集</a></td>
+	<td><a href="/tcgcreator/delete_monster_variables/{{ monster_variable.id}}">削除</a></td>
+	</tr>
+{% endfor %}
+</table>
+

@@ -1,0 +1,38 @@
+{% load lookup %}
+{% load static %}
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="/static/js/jquery-2.2.0.min.js "></script>
+<script type="text/javascript" src="/static/js/ajax.js"></script>
+<script type="text/javascript">
+</script>
+</head>
+<body>
+
+<h1>モンスター設定</h1>
+<table>
+<tr><th>モンスター名</th>
+{% for monster_variable in MonsterVariables %}
+<th>{{ monster_variable.monster_variable_label }}</th>
+{% endfor %}
+<th>テキスト</th><th>編集</th><th>削除</th></tr>
+{% for monster in Monster %}
+	<tr>
+	<td>{{ monster.monster_name }}</td>
+	{% for monster_item in monster.monster_item.all %}
+	{% if monster_item.monster_variables_id.monster_variable_kind_id.id < 3 %}
+		<td>{{ monster_item.monster_item_text }} </td>
+	{% else %}
+	<td>{{ monster_item.monster_variables_id.monster_variable_kind_id.id|joincomma:monster_item.monster_item_text |lookup2:MonsterVariablesSentences }} </td>
+	{% endif %}
+	{% endfor %}
+	<td>{{ monster.monster_sentence }}</td>
+	<td><a href="/tcgcreator/edit_monster/{{ monster.id}}">編集</a></td>
+	<td><a href="/tcgcreator/delete_monster/{{ monster.id}}">削除</a></td>
+	</tr>
+{% endfor %}
+</table>
+</body>
+</html>
+

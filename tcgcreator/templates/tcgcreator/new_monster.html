@@ -1,0 +1,77 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="/static/js/jquery-2.2.0.min.js "></script>
+<script type="text/javascript" src="/static/js/ajax.js"></script>
+<script type="text/javascript">
+	var prev;
+	var current_i = [];
+	var monster_kind_id = [];
+	$(document).ready(function(){
+	
+	{% for form_item in formitems %}
+		
+		$("#id_{{form_item.prefix}}-monster_item_text").after("<input type=\"button\" onclick=\"getItemChangeBefore("+{{form_item.prefix}}+")\" value=\"追加\"><input type=\"button\" onclick=\"deleteItemChange("+{{form_item.prefix}}+")\" value=\"削除\"><br>");
+		getItemChange({{ form_item.prefix }},0);
+		current_i[{{form_item.prefix}}]=1;
+	{% endfor %}
+	});
+	function getItemChangeBefore(prefix){
+		getItemChange(prefix,current_i[prefix])
+		current_i[prefix]++;
+	}
+	function deleteItemChange(prefix){
+		for(var i=0;i<prefix;i++){
+			$("#"+prefix+"-monster_item_text_"+i).remove()
+			
+		}
+		$("#id_"+prefix+"-monster_item_text").val("");
+		getItemChange(prefix,0);
+		current_i[prefix]=1;
+	}
+	function changeItemNum(prefix){
+		var tmp_str = "";
+		for(var i=0;i<current_i[prefix];i++){
+			tmp_str+=$("#"+prefix+"-monster_item_text_"+(i)).val()+"_";;
+		}
+		tmp_str = tmp_str.substr(0,tmp_str.length-1);
+		$("#id_"+prefix+"-monster_item_text").val(tmp_str);
+
+	}
+	function getItemChange(prefix,num){
+		
+	$.ajax({
+   type: "POST",
+   url: "/tcgcreator/get_monster_kind_type_for_new_monster/",
+   data: "delete_flag=0&prefix="+prefix+"&num="+num,
+success: function(data){
+		data2 = data.split("$");
+		if(data2[1]<3){
+			$("#id_"+prefix+"-monster_item_text").prop("type","text");
+		}else{
+		if(num==0){
+			$("#id_"+prefix+"-monster_item_text").after(data2[2] + data2[0]);
+			changeItemNum(prefix);
+		}else{
+			$("#"+prefix+"-monster_item_text_"+(num-1)).after(data2[0]);
+			changeItemNum(prefix);
+		}
+		}
+        } 
+	})
+		
+	}
+</script>
+</head>
+<body>
+<form id="form1" action="{% url 'new_monster' %}" method="POST">
+{% csrf_token %}
+{{ form.as_p }}
+{% for form_item in formitems %}
+{{ form_item.as_p }}
+{% endfor %}
+
+<input type="submit" value="送信">
+</form>
+</body>
+</html>

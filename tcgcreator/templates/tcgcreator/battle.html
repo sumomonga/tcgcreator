@@ -1,0 +1,1202 @@
+{% load lookup %}
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+.control input[type="button"]{
+	height: 30px;
+}
+table .field td{
+	border-collapse:separate;
+	border:1px solid;
+	width:120px;
+	height:10px;
+	}
+table .card td{
+	border-collapse:separate;
+	border:1px solid;
+	width:120px;
+	height:10px;
+	}
+</style>
+{% load static %}
+<script type="text/javascript" src="{% static 'js/jquery-2.2.0.min.js'%}"></script>
+<script type="text/javascript" src="{% static 'js/ajax.js'%}"></script>
+<script type="text/javascript">
+	var static_url = "{% get_static_prefix %}";
+	var gray_out = "{{gray_out.monster_variable_name}}";
+	var show_img = true;
+	var music= new Audio();
+	var music_name ="";
+	var game_field;
+	var timer = 0;
+	var timer_id;
+	var timer_for_win_and_lose=0;
+	function SendMessage(){
+	    var message = $("#tomessage").val();
+	$.ajax({
+   type: "POST",
+   url: "{% url 'send_message'  %}",
+   data: "room_number={{room_number}}&message="+message,
+success: function(data){
+    var tmp = {};
+    tmp["log"] = data;
+	WriteLog(tmp);
+   },
+   error:function(){
+		console.log("error");
+	}
+	});
+	}
+	function Wait(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+
+ });
+	}
+	$(document).ready(function(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+});
+function cancel(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function none(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function ask_det2(type,k,l){
+	data = global_ask_data;
+	var tmp = {};
+	if(type == "deck"){
+		global_answer_deck.push(k+"_"+l);
+		tmp["val"] = k+"_"+l;
+		tmp["type"] = "deck";;
+		global_all_result.push(tmp);
+	}else if(type == "grave"){
+		global_answer_grave.push(k+"_"+l);
+		tmp["val"] = k+"_"+l;
+		tmp["type"] = "grave";;
+		global_all_result.push(tmp);
+	}else if(type == "hand"){
+		global_answer_hand.push(k+"_"+l);
+		tmp["val"] = k+"_"+l;
+		tmp["type"] = "hand";;
+		global_all_result.push(tmp);
+	}
+	min_equation_number = data["min_equation_number"];
+	max_equation_number = data["min_equation_number"];
+	if(global_all_result.length == max_equation_number){
+		sendAnswer();
+		return;
+	}
+	equation_kind = data["equation_kind"];
+	result_html =prompt+"<br>";
+	data = data["return_val"];
+	result_html = "";
+	decks = [];
+	graves = [];
+	hands = [];
+	global_ask_fields = [];
+	var i,j;
+	$("#end_chain").hide();
+	for(i = 0;i<data.length;i++){
+		if(data[i]["field"] != undefined){
+			MakeFieldsChoose(data[i])
+		}else{
+			result_html += data[i]["mine_or_other"]+"<br>";
+		}
+		if(data[i]["cards"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["cards"].length;j++){
+				if($.inArray(i+"_"+j,global_answer_deck) == -1){
+					if(Validate(data[i]["cards"][j])){
+						result_html += "<input type=\"button\" onclick=\"ask_det2('deck',"+i+","+j+")\" value=\""+data[i]["cards"][j]["monster_name"]+"\">";;
+					}
+				}
+			}
+		}
+		if(data[i]["grave"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["grave"].length;j++){
+				if($.inArray(i+"_"+j,global_answer_grave) == -1){
+					if(Validate(data[i]["grave"][j])){
+						result_html += "<input type=\"button\" onclick=\"ask_det2('grave',"+i+","+j+")\" value=\""+data[i]["grave"][j]["monster_name"]+"\">";;
+					}
+				}
+			}
+		}
+		if(data[i]["hand"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["hand"].length;j++){
+				if($.inArray(i+"_"+j,global_answer_hand) == -1){
+					if(Validate(data[i]["hand"][j])){
+						result_html_hand = "<br><input type=\"button\" onclick=\"ask_det2('hand',"+i+","+j+")\" value=\""+data[i]["hand"][j]["monster_name"]+"\">";;
+				        $("#"+data[i]["hand"][j]["place_unique_id"]).after(result_html_hand);
+					}
+				}
+			}
+		}
+	}
+	result_html += "<input type=\"button\" value=\"送信\" onclick=\"sendAnswer()\">";
+	$("#message").html(result_html);
+}
+function ask_det(data){
+	global_all_result = [];
+	console.log(data)
+	data = JSON.parse(data);
+	global_ask_data = data;
+	global_answer_deck = [];
+	global_answer_grave = [];
+	global_answer_hand = [];
+	min_equation_number = data["min_equation_number"];
+	max_equation_number = data["min_equation_number"];
+	global_field_whether_monster = data["whether_monster"];
+	global_field_sentence = data["sentence"];
+	equation_kind = data["equation_kind"];
+	monster_name_kind = data["monster_name_kind"];
+	if(data["variables"] != undefined){
+    	variables = data["variables"];
+    }else{
+    	variables = Array();
+    }
+	if(data["flag"] != undefined){
+		flag = data["flag"];
+	}else{
+		flag = false;
+	}
+	exclude = data["exclude"];
+	
+	prompt = data["prompt"];
+	data = data["return_val"];
+	result_html = "";
+	decks = [];
+	graves = [];
+	hands = [];
+	global_ask_fields = [];
+	var i,j;
+	result_html = prompt+"<br>";
+	$("#end_chain").hide();
+	for(i = 0;i<data.length;i++){
+		if(data[i]["field"] != undefined){
+			MakeFieldsChoose(data[i]);
+		}else{
+			result_html += data[i]["mine_or_other"]+"<br>";
+		}
+		if(data[i]["cards"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["cards"].length;j++){
+				if(Validate(data[i]["cards"][j])){
+				result_html += "<input type=\"button\" onclick=\"ask_det2('deck',"+i+","+j+")\" value=\""+data[i]["cards"][j]["monster_name"]+"\">";;
+				}
+				tmp= data[i]["cards"][j];
+				tmp["type"] = "deck";
+				tmp["mine_or_other"] = data[i]["mine_or_other_val"];
+				tmp_det.push(tmp);
+			}
+			tmp2 = {};
+			tmp2["key"] = data[i]["deck_id"];
+			tmp2["val"]= j;
+			tmp2["det"]= tmp_det;
+			decks.push(tmp2);
+		}
+		if(data[i]["grave"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["grave"].length;j++){
+				if(Validate(data[i]["grave"][j])){
+				result_html += "<input type=\"button\" onclick=\"ask_det2('grave',"+i+","+j+")\" value=\""+data[i]["grave"][j]["monster_name"]+"\">";;
+				}
+				tmp = data[i]["grave"][j];
+				tmp["type"] = "grave";
+				tmp["mine_or_other"] = data[i]["mine_or_other_val"];
+				tmp_det.push(tmp);
+			}
+			tmp2 = {};
+			tmp2["key"] = data[i]["grave_id"];
+			tmp2["val"]= j;
+			tmp2["det"]= tmp_det;
+			graves.push(tmp2);
+		}
+		if(data[i]["hand"] != undefined){
+			tmp_det  = [];
+			for(j=0;j<data[i]["hand"].length;j++){
+				if(Validate(data[i]["hand"][j])){
+				result_html_hand = "<br><input type=\"button\" onclick=\"ask_det2('hand',"+i+","+j+")\" value=\""+data[i]["hand"][j]["monster_name"]+"\">";;
+				$("#"+data[i]["hand"][j]["place_unique_id"]).after(result_html_hand);
+				}
+				tmp = data[i]["hand"][j];
+				tmp["type"] = "hand";
+				tmp["mine_or_other"] = data[i]["mine_or_other_val"];
+				tmp_det.push(tmp);
+			}
+			tmp2 = {};
+			tmp2["key"] = data[i]["hand_id"];
+			tmp2["val"]= j;
+			tmp2["det"]= tmp_det;
+			hands.push(tmp2);
+		}
+	}
+	global_ask_decks = decks;
+	global_ask_graves = graves;
+	global_ask_hands = hands;
+	result_html += "<input type=\"button\" value=\"送信\" onclick=\"sendAnswer()\">";
+	$("#message").html(result_html);
+}
+function InvokeChoice(id){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'choices'  %}",
+   data: "room_number={{room_number}}&trigger_id="+id,
+success: function(data){
+	InvokeChoiceDet(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function InvokeChoiceDet(data){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function sendFieldTrigger(x,y,place_id,trigger_id,mine_or_other){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'field_trigger'  %}",
+   data: "room_number={{room_number}}&trigger_id="+trigger_id+"&x="+x+"&y="+y+"&place_id="+place_id+"&mine_or_other="+mine_or_other,
+success: function(data){
+	sendFieldTriggerDet(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function sendDeckTrigger(deck_id,place_id,trigger_id,mine_or_other){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'deck_trigger'  %}",
+   data: "room_number={{room_number}}&trigger_id="+trigger_id+"&deck_id="+deck_id+"&place_id="+place_id+"&mine_or_other="+mine_or_other,
+success: function(data){
+	sendHandTriggerDet(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function sendHandTrigger(hand_id,place_id,trigger_id,mine_or_other){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'hand_trigger'  %}",
+   data: "room_number={{room_number}}&trigger_id="+trigger_id+"&hand_id="+hand_id+"&place_id="+place_id+"&mine_or_other="+mine_or_other,
+success: function(data){
+	sendHandTriggerDet(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function sendAnswer(){
+	var decks = global_ask_decks;
+	var graves = global_ask_graves;
+	var hands = global_ask_hands;
+	var return_value = [];
+	var tmp,tmp2;
+	var field;
+	for(key_all in global_all_result){
+		if(global_all_result[key_all]["type"] == "field"){
+			tmp2 = global_all_result[key_all]["val"].split("_");
+			tmp = {};
+			tmp["x"] = tmp2[0];
+			tmp["y"] = tmp2[1];
+			tmp["place"] = "field";
+			return_value.push(tmp);
+		}else if(global_all_result[key_all]["type"] == "deck"){
+			for(var i=0;i<decks.length;i++){
+				for(j=0;j<decks[i]["val"];j++){
+					if(global_all_result[key_all]["val"] == i+"_"+j){
+						tmp = decks[i]["det"][j];
+						tmp["deck_id"] = decks[i]["key"];
+						tmp["place"] = "deck";;
+						return_value.push(tmp);
+					}
+				}
+			}
+		}else if(global_all_result[key_all]["type"] == "grave"){
+			for(var i=0;i<graves.length;i++){
+				for(j=0;j<graves[i]["val"];j++){
+					if(global_all_result[key_all]["val"] == i+"_"+j){
+						tmp = graves[i]["det"][j];
+						tmp["grave_id"] = graves[i]["key"];
+						tmp["place"] = "grave";;
+						return_value.push(tmp);
+					}
+				}
+			}
+		}else if(global_all_result[key_all]["type"] == "hand"){
+			for(var i=0;i<hands.length;i++){
+				for(j=0;j<hands[i]["val"];j++){
+					if(global_all_result[key_all]["val"] == i+"_"+j){
+						tmp = hands[i]["det"][j];
+						tmp["hand_id"] = hands[i]["key"];
+						tmp["place"] = "hand";;
+						return_value.push(tmp);
+					}
+				}
+			}
+		}
+	}
+	if(return_value.length <min_equation_number || return_value.length >max_equation_number){
+		alert("選択できるのは"+min_equation_number+"以上"+max_equation_number+"以下です");
+		
+		return;
+	}  
+	answer = JSON.stringify(return_value);	
+	
+	$.ajax({
+   type: "POST",
+   url: "{% url 'answer'  %}",
+   data: "room_number={{room_number}}&answer="+answer,
+success: function(data){
+	if(data == "error"){
+		ask();
+		return;
+	}
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function sendFieldTriggerDet(data){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function sendHandTriggerDet(data){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function answerDet(data){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'battle_det'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	Success(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+}
+function ask(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'ask_place'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	ask_det(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function None(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'none'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	none(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+	
+ });
+}
+function Cancel(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'cancel'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+	cancel(data);
+   },
+   error:function(){
+		console.log("error");
+	}
+});
+
+}
+    function PlayMusic(audio_name){
+        if(audio_name != music_name){
+            music.pause();
+            music.src = static_url+"/audio/"+audio_name;
+            music_name = audio_name;
+            music.play();
+        }
+    }
+	function Success(data){
+
+	data = JSON.parse(data);
+	PlayMusic(data["audio"]);
+	$("#message").html("");
+	MakeLeftColumn(data);
+	MakeOpponentHands(data);
+	MakeRightColumn(data);
+	MakeHands(data);
+	MakeFields(data);
+	MakeChoices(data);
+	MakeNone(data);
+	WriteLog(data);
+	if(data["ask"] != false){
+		ask();
+
+	}else if(data["ask_org"] == true ){
+	    setTimeout(Wait,5000);
+	}else if(data["appoint"] == false ){
+	    setTimeout(Wait,5000);
+	}
+}
+    function WriteLog(data){
+        log = data["log"].replace(/\n/g,"<br>");
+        $("#log").html(log);
+
+    }
+	function MakeNone(data){
+		if(data["pri"] == false){
+			return;
+		}
+		var html = $("#choices").html();
+		html += '<input type="button" value="優先権を放棄" onclick ="None()">';
+		$("#choices").html(html);
+	}
+	function MakeChoices(data){
+		var i;
+		var html="";
+		if(data["choices"] == null){
+    		$("#choices").html("");
+			return;
+		}
+		for(i=0;i<data["choices"].length;i++){
+			html += '<input type="button" value="'+data["choices"][i]["sentence"]+'" onclick ="InvokeChoice('+data["choices"][i]["id"]+')">';
+			
+		}
+		$("#choices").html(html);
+		
+	}
+	function MakeFieldsChoose2(x,y){
+		var fields = global_field_fields;
+		var kind = global_field_kind;
+		var mine_or_other = global_field_mine_or_other;
+		var user = global_field_user;
+		
+		tmp = {};
+		tmp["val"] = x+"_"+y;
+		tmp["type"] = "field";
+		global_all_result.push(tmp);
+		console.log(global_all_result);
+		global_ask_fields.push(tmp["val"]);
+		if(global_all_result.length == max_equation_number){
+			sendAnswer();
+		}
+		if((user == 2 && mine_or_other == "1") || (user == 1 && mine_or_other=="2")){
+			mine_or_other = 2;
+		}else if((user == 2 && mine_or_other == "2") || (user == 1 && mine_or_other=="1")){
+			mine_or_other = 1;
+		}else{
+			mine_or_other = 0;
+		}
+		var x,y;
+		var i;
+		for(x = 0;x<fields.length;x++){
+			for(y = 0;y<fields[x].length;y++){
+				if(fields[x][y]["det"] == null){
+					if(global_field_whether_monster == 0 && fields[x][y]["kind"].search(String(kind))!=-1 && fields[x][y]["mine_or_other"] == mine_or_other){
+						if($.inArray(x+"_"+y,global_ask_fields) != -1){
+						    if(user == 1){
+						    	$("#"+x+"_"+y).html("");
+						    }else{
+						    	$("#"+x+"_"+(fields[x].length-y-1)).html("");
+						    }
+
+						    continue;
+
+						}
+						result="<input type=\"button\" value=\""+global_field_sentence+"\" onclick=\"MakeFieldsChoose2("+x+","+y+")\")>";
+					
+						if(user == 1){
+							$("#"+x+"_"+y).html(result);
+						}else{
+							$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+						}
+					}else{
+						if(user == 1){
+							$("#"+x+"_"+y).html("");
+						}else{
+							$("#"+x+"_"+(fields[x].length-y-1)).html("");
+						}
+					}
+				}else{
+		
+					if(show_img == false){
+					result="<table><tr><td colspan=\"2\">"+fields[x][y]["det"]["monster_name"]+"</td></tr>";
+					for(i=0;i<fields[x][y]["det"]["variables"].length;i++){
+							result += "<tr><td>"+fields[x][y]["det"]["variables"][i]["name"]+"</td><td>"+fields[x][y]["det"]["variables"][i]["str"]+"</td></tr>";
+					}
+					}else{
+			
+						gray_flag = false;
+							if(parseInt(fields[x][y]["det"]["variables"][gray_out]["value"]) >= 1){
+								gray_flag = true;
+							}else{
+								gray_flag = false;
+							}
+						if(gray_flag == true){
+							result="<table><tr><td><a target=\"_blank\" href=\"{% url "explain" %}?id="+fields[x][y]["det"]["id"]+"\"> <img style=\"opacity:0.4:background:gray\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\" width=\"100px\" height=\"140px\" ></a></td></tr>";
+						}else{
+							result="<table><tr><td><a target=\"_blank\"  href=\"{% url "explain"%}?id="+fields[x][y]["det"]["id"]+"\"> <img src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\" width=\"100px\" height=\"140px\" ></a></td></tr>";
+						}
+					}
+					if(global_field_whether_monster == 1 && fields[x][y]["kind"].search(String(kind))!=-1 && fields[x][y]["mine_or_other"] == mine_or_other){
+						if($.inArray(x+"_"+y,global_ask_fields)!= -1){
+						}else if(Validate(fields[x][y]["det"])){
+							tmp = {};
+							tmp["x"] = x;
+							tmp["y"] = y;
+							result+="<tr><td><input type=\"button\" value=\""+global_field_sentence+"\" onclick=\"MakeFieldsChoose2("+x+","+y+")\"></td></tr>";
+						}
+					}
+					result+="</table>";
+					if(user == 1){
+						$("#"+x+"_"+y).html(result);
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+					}
+				}
+			}
+		}
+	}
+	function MakeFieldsChoose(data){
+		var tmp;
+		var fields = data["field_info"];
+		var kind = data["kind"];
+		var mine_or_other = data["mine_or_other"];
+		var user = data["user"];
+		global_field_fields = fields;
+		global_field_kind = kind;
+		global_field_mine_or_other = mine_or_other;
+		global_field_user = user;
+		if((user == 2 && mine_or_other == "1") || (user == 1 && mine_or_other=="2")){
+			mine_or_other = 2;
+		}else if((user == 2 && mine_or_other == "2") || (user == 1 && mine_or_other=="1")){
+			mine_or_other = 1;
+		}else{
+			mine_or_other = 0;
+		}
+		var x,y;
+		var i;
+		for(x = 0;x<fields.length;x++){
+			for(y = 0;y<fields[x].length;y++){
+				if(fields[x][y]["det"] == null){
+					if(global_field_whether_monster == 0 && fields[x][y]["kind"].search(String(kind))!=-1 && fields[x][y]["mine_or_other"] == mine_or_other){
+						result="<input type=\"button\" value=\""+global_field_sentence+"\" onclick=\"MakeFieldsChoose2("+x+","+y+")\")>";
+					
+						if(user == 1){
+							$("#"+x+"_"+y).html(result);
+						}else{
+							$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+						}
+					}else{
+						if(user == 1){
+							$("#"+x+"_"+y).html("");
+						}else{
+							$("#"+x+"_"+(fields[x].length-y-1)).html("");
+						}
+					}
+				}else{
+					if(show_img ==false){
+					result="<table><tr><td colspan=\"2\">"+fields[x][y]["det"]["monster_name"]+"</td></tr>";
+					for(i=0;i<fields[x][y]["det"]["variables"].length;i++){
+							result += "<tr><td>"+fields[x][y]["det"]["variables"][i]["name"]+"</td><td>"+fields[x][y]["det"]["variables"][i]["str"]+"</td></tr>";
+					}
+					}else{
+						gray_flag = false;
+							if(parseInt(fields[x][y]["det"]["variables"][gray_out]["value"]) >= 1){
+								gray_flag = true;
+							}else{
+								gray_flag = false;
+							}
+						if(gray_flag == true){
+						result="<table><tr><td><a target=\"_blank\"  href=\"{% url "explain"%}?id="+fields[x][y]["det"]["id"]+"\"> <img style=\"opacity:0.4;background:gray\" width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></a></td></tr>";
+						}else{
+						result="<table><tr><td><a target=\"_blank\"  href=\"{% url "explain"%}?id="+fields[x][y]["det"]["id"]+"\"> <img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></a></td></tr>";
+						}
+					}
+					if(global_field_whether_monster== 1 && fields[x][y]["kind"].search(String(kind))!=-1 && fields[x][y]["mine_or_other"] == mine_or_other){
+
+
+							if(Validate(fields[x][y]["det"])){
+								tmp = {};
+								tmp["x"] = x;
+								tmp["y"] = y;
+								global_ask_fields.push(tmp);
+								result+="<tr><td><input type=\"button\" value=\""+global_field_sentence+"\" onclick=\"MakeFieldsChoose2("+x+","+y+")\"></td></tr>";
+							}
+					}
+					result+="</table>";
+					if(user == 1){
+						$("#"+x+"_"+y).html(result);
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+					}
+				}
+			}
+		}
+	}
+	function MakeFields(data){
+		var fields = data["field_info"];
+		var user = data["user"];
+		var x,y;
+		var i;
+		for(x = 0;x<fields.length;x++){
+			for(y = 0;y<fields[x].length;y++){
+				
+				if(fields[x][y]["det"] == null){
+					if(fields[x][y]["hide"] == true){
+					if(user == 1){
+						$("#"+x+"_"+y).html('<div style="width:100px;height:140px;background-color:black"></div>');
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html('<div style="width:100px;height:140px;background-color:black"></div>');
+					}
+					}else{
+					if(user == 1){
+						$("#"+x+"_"+y).html("");
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html("");
+					}
+					}
+				}else{
+					if(show_img == false){
+					result="<table><tr><td colspan=\"2\">"+fields[x][y]["det"]["monster_name"]+"</td></tr>";
+					for(i=0;i<fields[x][y]["det"]["variables"].length;i++){
+							result += "<tr><td>"+fields[x][y]["det"]["variables"][i]["name"]+"</td><td>"+fields[x][y]["det"]["variables"][i]["str"]+"</td></tr>";
+					}
+					}else{
+						gray_flag = false;
+							if(parseInt(fields[x][y]["det"]["variables"][gray_out]["value"]) >= 1){
+								gray_flag = true;
+							}else{
+								gray_flag = false;
+							}
+						if(gray_flag == true){
+							result="<table><tr><td><a target=\"_blank\"  href=\"{% url "explain"%}?id="+fields[x][y]["det"]["id"]+"\"> <img style=\"opacity:0.4;background:gray\" width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></a></td></tr>";
+						}else{
+							result="<table><tr><td><a target=\"_blank\"  href=\"{% url "explain"%}?id="+fields[x][y]["det"]["id"]+"\"> <img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+fields[x][y]["det"]["img"]+"\"></a></td></tr>";
+						}
+					}
+					if(fields[x][y]["det"]["trigger"] != undefined){
+						for(k=0;k<fields[x][y]["det"]["trigger"].length;k++){
+							result += "<br><input type=\"button\" onclick=\"sendFieldTrigger('"+x+"','"+y+"','"+fields[x][y]["det"]["place_unique_id"]+"','"+fields[x][y]["det"]["trigger"][k]["id"]+"',1)\" value=\""+fields[x][y]["det"]["trigger"][k]["name"]+"\">";
+						}
+					}
+					result+="</table>";
+					if(user == 1){
+						$("#"+x+"_"+y).html(result);
+					}else{
+						$("#"+x+"_"+(fields[x].length-y-1)).html(result);
+					}
+				}
+			}
+		}
+	}
+	function MakeHands(data){
+		var hands = data["hand_info"];
+		var i,j,k;
+		var monster_variable;
+		var variable_name;
+		var img_url;
+		var result="<table style=\"display:inline;text-align:center\">";
+		for(i=0;i<hands.length;i++){
+			if(hands.length!= 1){
+				result+="<tr><td colspan=\""+hands[i]["myhandnum"]+"\">"+hands[i]["hand_name"]+"</td></tr>";
+			}
+			if(hands[i]["commonhandnum"] != undefined){
+				continue;
+			}
+			result+="<tr>";
+			for(j=0;j<hands[i]["myhandnum"];j++){
+				
+				result+="<td >";
+				img_url = hands[i]["myhand"][j]["img"];	
+				result+="<a target=\"_blank\"  href=\"{% url "explain" %}?id="+hands[i]["myhand"][j]["id"]+"\" id=\""+hands[i]["myhand"][j]["place_unique_id"]+"\"><img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+img_url+"\"></a>";
+				if(hands[i]["myhand"][j]["trigger"] != undefined){
+			for(k=0;k<hands[i]["myhand"][j]["trigger"].length;k++){
+					result += "<br><input type=\"button\" onclick=\"sendHandTrigger('"+(i+1)+"','"+hands[i]["myhand"][j]["place_unique_id"]+"','"+hands[i]["myhand"][j]["trigger"][k]["id"]+"',1)\" value=\""+hands[i]["myhand"][j]["trigger"][k]["name"]+"\">";
+				}
+				}
+				result+="</td>";
+			}
+			result+="</tr>";
+			
+				
+		}
+		result+="</table>";
+		$("#hands").html(result);
+	}
+		
+	function MakeOpponentHands(data){
+		var hands = data["hand_info"];
+		var i,j;
+		var result="<table style=\"display:inline;text-align:center\">";
+		for(i=0;i<hands.length;i++){
+			result += "<tr>"
+			if(hands.length!= 1){
+				result+="<td>"+hands[i]["hand_name"]+"</td>";
+			}
+			if(hands[i]["commonhandnum"] != undefined){
+				continue;
+			}
+			if(hands[i]["otherhand"] == undefined){
+				result+="<td>";
+				for(j=0;j<hands[i]["otherhandnum"];j++){
+					result += "■ ";
+				}
+				result += "</td></tr>";
+			}else{
+			for(j=0;j<hands[i]["otherhandnum"];j++){
+				
+				result+="<td>";
+				img_url = hands[i]["otherhand"][j]["img"];	
+				result+="<a target=\"_blank\"  href=\"{% url "explain"%}?id="+hands[i]["otherhand"][j]["id"]+"\"><img width=\"100px\" height=\"140px\" src=\""+static_url+"/img/"+img_url+"\"></a>";
+				if(hands[i]["otherhand"][j]["trigger"] != undefined){
+			for(k=0;k<hands[i]["otherhand"][j]["trigger"].length;k++){
+					result += "<br><input type=\"button\" onclick=\"sendHandTrigger('"+(i+1)+"','"+hands[i]["otherhand"][j]["place_unique_id"]+"','"+hands[i]["otherhand"][j]["trigger"][k]["id"]+"',1)\" value=\""+hands[i]["otherhand"][j]["trigger"][k]["name"]+"\">";
+				}
+				}
+				result+="</td>";
+			}
+			result+="</tr>";
+			}
+			
+				
+		}
+		$("#opponent_hands").html(result);
+	}
+		
+	
+	function MakeLeftColumn(data){
+		var decks = data["deck_info"];
+		var graves = data["grave_info"];
+		//var variables = data["variables"];
+		var html="";
+		var i,j;
+
+		if(data["turn"] != 0){
+			html += "ターン"+ data["user_name"+ data["turn"]]+"<br>" ;
+		}
+/*
+		for(i=0;i<variables.length;i++){
+			html+=variables[i]["variable_name"]+"<br>";
+			if(variables[i]["common"] == true){
+				html+=variables[i]["variable_name"]["value"][0]+"<br>";
+			}else{
+				
+				html+=data["user_1"]+"<br>";
+				html+=variables[i]["variable_name"]["value"][0]+"<br>";
+				html+=data["user_2"]+"<br>";
+				html+=variables[i]["variable_name"]["value"][1]+"<br>";
+			}
+		}
+*/
+		for(i=0;i<decks.length;i++){
+			html+=decks[i]["deck_name"]+"<br>";
+			if(decks[i]["commondecknum"] != undefined){
+				if(decks[i]["commondeck"] != undefined){
+					html += decks[i]["deck_name"]+"<br>";
+					html += "<a target=\"_blank\" href=\"{% url 'explain_deck' %}?room_number={{room_number}}&deck="+i+"\">共通</a> "+decks[i]["commondecknum"]+"<br>";
+				}else{
+					html+=decks[i]["commondecknum"]+"<br>";
+				}
+			}else{
+				if(decks[i]["mydeck"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_deck' %}?room_number={{room_number}}&user_number="+data["user"]+"&deck="+i+"\">"+data["user_name1"]+" "+decks[i]["mydecknum"]+"</a><br>";
+					for(j=0;j<decks[i]["mydecknum"];j++){
+						if(decks[i]["mydeck"][j]["trigger"] != undefined){
+							for(k=0;k<decks[i]["mydeck"][j]["trigger"].length;k++){
+								html += "<input type=\"button\" onclick=\"sendDeckTrigger('"+(i+1)+"','"+decks[i]["mydeck"][j]["place_unique_id"]+"','"+decks[i]["mydeck"][j]["trigger"][k]["id"]+"',1)\" value=\""+decks[i]["mydeck"][j]["trigger"][k]["name"]+"\">";
+							}
+						}
+					}
+				}else{
+					html+=data["user_name1"]+" ";
+					html+=decks[i]["mydecknum"]+"<br>";
+				}	
+				if(decks[i]["otherdeck"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_deck' %}?room_number={{room_number}}&user_number="+data["other_user"]+"&deck="+i+"\">"+data["user_name2"]+" "+decks[i]["otherdecknum"]+"</a><br>";
+				}else{
+					html+=data["user_name2"]+" ";
+					html+=decks[i]["otherdecknum"]+"<br>";
+				}	
+			}
+		}
+		for(i=0;i<graves.length;i++){
+			html+=graves[i]["grave_name"]+"<br>";
+			if(graves[i]["commongravenum"] != undefined){
+				if(graves[i]["commongrave"] != undefined){
+					html += graves[i]["grave_name"]+"<br>";
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&grave="+i+"\">共通</a> "+graves[i]["commongravenum"]+"<br>";
+				}
+			}else{
+				if(graves[i]["mygrave"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&user_number="+data["user"]+"&grave="+i+"\">"+data["user_name1"]+" "+graves[i]["mygravenum"]+"</a><br>";
+				}else{
+					html+=data["user_name1"]+" ";
+					html+=graves[i]["mygravenum"]+"<br>";
+				}	
+				if(graves[i]["othergrave"] != undefined){
+					html += "<a target=\"_blank\" href=\"{% url 'explain_grave' %}?room_number={{room_number}}&user_number="+data["other_user"]+"&grave="+i+"\">"+data["user_name2"]+" "+graves[i]["othergravenum"]+"</a><br>";
+				}else{
+					html+=data["user_name2"]+" ";
+					html+=graves[i]["othergravenum"]+"<br>";
+				}	
+			}
+		}
+		html+="残り時間<br>";
+		html+=data["user_name1"]+" ";
+		html+=String(parseInt(data["time_1"]))+"<br>";
+		html+=data["user_name2"]+" ";
+		html+=String(parseInt(data["time_2"]))+"<br>";
+	$("#left_column").html(html);
+	
+}
+	
+	function MakeRightColumn(data){
+		var html="";
+		var color = "black";
+		var turn;
+		var user_number = parseInt(data["user"]);
+		if(user_number == 1){
+			if(data["turn"] == 1){
+				turn = 1;
+			}else{
+				turn = 2;
+			}	
+		}else{
+	
+			if(data["turn"] == 2){
+				turn = 1;
+			}else{
+				turn = 2;
+			}	
+		}
+	
+		{% for phase in Phases %}
+		if(data["phase"] == {{phase.id}} ){
+			color = "green";
+		}else{
+			color = "black";
+		}
+		html += "<span style=\"color:"+ color+"\">{{phase.phase_name}}</span>";
+		html += "<br>";
+		{% endfor %}
+		var variable_id = [];
+		var i=0;
+		{% for variable in Variable %}
+			html += "{{variable.variable_name}}<br>";
+			if({{variable.mine_or_other}} == 1){
+				html += data["variable"]["{{variable.variable_name}}"]["value"];
+			}else{
+				html+=data["user_name1"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["user"]+"_value"]+"<br>";
+				html+=data["user_name2"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["other_user"]+"_value"]+"<br>";
+			}
+		
+		{% endfor %}
+		{% for variable in VirtualVariable %}
+			html += "{{variable.variable_name}}<br>";
+			if({{variable.mine_or_other}} == 1){
+				html += data["variable"]["{{variable.variable_name}}"]["value"];
+			}else{
+				html+=data["user_name1"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["user"]+"_value"]+"<br>";
+				html+=data["user_name2"]+"<br>";
+				html += data["variable"]["{{variable.variable_name}}"][data["other_user"]+"_value"]+"<br>";
+			}
+
+		{% endfor %}
+
+
+		$("#right_column").html(html);
+		
+	}
+	function Surrender(){
+		if(confirm("本当にサレンダーしますか")){
+			SendLose();
+		}
+	}
+	function SendLose(){
+	$.ajax({
+   type: "POST",
+   url: "{% url 'send_lose'  %}",
+   data: "room_number={{room_number}}",
+success: function(data){
+        switch( {{ room_number}}){
+            case 1:
+                location.href='{% url 'watch1'%}';
+                break;
+            case 2:
+                location.href='{% url 'watch2'%}';
+                break;
+            case 3:
+                location.href='{% url 'watch3'%}';
+                break;
+        }
+   },
+   error:function(){
+		console.log("error");
+	}
+	});
+
+	}
+	function Validate(monster){
+		var name_kind = monster_name_kind;
+		var i,j;
+		for(i = 0;i<exclude.length;i++){
+			if(monster["place_unique_id"] == exclude[i]){
+				return false;
+			}
+		}
+		if (flag != false){
+			if(monster["flag"] != true){
+					return false;
+				}
+		}
+		if (name_kind != ""){
+			if(name_kind["operator"] == "="){
+				if(monster["monster_name"] != name_kind["monster_name"]){
+					return false;
+				}
+			}else if(name_kind["operator"] == "like"){
+				if(monster["monster_name"].search(name_kind["monster_name"]) >-1){
+					return false;
+				}
+			}
+		}
+		var current_and_or ;
+		var current_flag;
+		var variable_flag;
+		for(var i =0;i<variables.length;i++){
+		    current_flag = true;
+		    current_and_or = "and";
+		    for(var j=0;j<variables[i].length;j++){
+		        variable_flag = true;
+			    if(variables[i][j]["operator"] == "=" || variables[i][j]["operator"] == "" ){
+			        if (variables[i][j]["init"] == 0){
+			    	    if( monster["variables"][variables[i][j]["name"]]["value"] != variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else if (variables[i][j]["init"] == 1){
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_value"] != variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else{
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_init_value"] != variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }
+			    }else if(variables[i][j]["operator"] == "<=" ){
+			        if (variables[i][j]["init"] == 0){
+			    	    if( monster["variables"][variables[i][j]["name"]]["value"] > variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else if (variables[i][j]["init"] == 1){
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_value"] > variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else{
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_init_value"] > variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }
+			    }else if(variables[i][j]["operator"] == ">=" ){
+			        if (variables[i][j]["init"] == 0){
+			    	    if( monster["variables"][variables[i][j]["name"]]["value"] < variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else if (variables[i][j]["init"] == 1){
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_value"] < variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else{
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_init_value"] < variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }
+			    }else if(variables[i][j]["operator"] == "!=" ){
+			        if (variables[i][j]["init"] == 0){
+			    	    if( monster["variables"][variables[i][j]["name"]]["value"] == variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else if (variables[i][j]["init"] == 1){
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_value"] == variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }else{
+			    	    if( monster["variables"][variables[i][j]["name"]]["init_init_value"] == variables[i][j]["num"]){
+			    		    variable_flag =  false;
+	    	    	    }
+	    	        }
+	            }
+	            if(current_and_or == "and"){
+	                if(current_flag == true){
+	                        current_flag = variable_flag;
+	                }else{
+	                        current_flag = false;
+	                }
+	            }else{
+	                if(current_flag == true){
+	                        current_flag = true;
+	                }else{
+	                        current_flag = variable_flag;
+	                }
+	            }
+	            current_and_or = variables[i][j]["and_or"];
+	        }
+	        if(current_flag == false){
+	            return false;
+	        }
+		}
+		return true;
+	}
+</script>
+</head>
+<body>
+<table id="field" width="100%">
+<tr><td id="left_column" valign="top" nowarp="">
+	
+</td><td align="center" valign="top">
+<br><span id="player"></span><br>
+<br><span id="opponent_hands"></span><br>
+<table class="field"> 
+{% for y in range_y %}
+<tr>
+{% for x in range_x %}
+<td id="{{x}}_{{y}}" class=" {% for tmp in y|get_field:x %} {{tmp}} {% endfor %}">
+</td>
+{% endfor %}
+</tr>
+{% endfor %}
+	
+<tr ><td style="text-align:center" colspan="5" id="log"> </td></tr>
+<tr ><td style="text-align:center" colspan="5" id="message"> </td></tr>
+<tr ><td style="text-align:center" colspan="5" >
+    <span id="end_chain" style="text-align:center"><input type="button" value="{{Config.cancel_name}}" onclick="EndChain()"></span>
+        <span id="choices" style="text-align:center"></span>
+        <span id="cancel" style="text-align:center"><input type="button" value="キャンセル" onclick="javascript:Cancel()"></span>
+        <span id="lose" style="text-align:center"><input type="button" value="降参" onclick="javascript:Surrender()"></span>
+    <br>
+</td></tr>
+<tr><td align="center" colspan="5">
+<br><span  style="text-align:center" id="player2"></span><br>
+</td></tr>
+</table>
+</td><td id="right_column" align="center" valign="top" nowarp=""></td></tr>
+</table >
+<div style="text-align:center;margin:0 auto" id="hands">
+</div>
+<div class = "control">
+<div id="timer"></div>
+    <div style="text-align:center">
+        <a id="back" style="display:none" target="_blank" href="choose.php">戻る</a>
+        {% if room_number == 1 %}
+        <a target="_blank" href="{% url 'watch1'  %}">これまでのデュエル内容を確認</a>
+        {% elif room_number == 2 %}
+        <a target="_blank" href="{% url 'watch2'  %}">これまでのデュエル内容を確認</a>
+        {% elif room_number == 3 %}
+        <a target="_blank" href="{% url 'watch3'  %}">これまでのデュエル内容を確認</a>
+        {% endif %}
+    </divs>
+<div style="text-align:center">メッセージ送信<input type="text" id="tomessage"><input type="button" onclick="SendMessage();" value="メッセージ送信"></div>
+<div style="text-align:center;margin-bottom:10px"><input type="button" onclick="GetResponse();" value="更新"></div>
+</div>
+<div style="border:1px solid #000;text-align:center;height:30px;overflow-y:scroll" id="message2" ></div>
+
+</body>
+</html>

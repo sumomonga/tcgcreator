@@ -1,0 +1,5 @@
+<form id="form1" action="{% url 'edit_monster_variables_kind' monster_variables_kind.id %}" method="POST">
+{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="送信">
+</form>

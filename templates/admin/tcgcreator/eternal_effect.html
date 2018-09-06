@@ -1,0 +1,181 @@
+{% extends "admin/change_form.html" %} 
+{% block footer %}
+<div id="trigger_condition" style="width:50%;min-height:200px;background-color:white;border:1px solid #000000;display:none">
+    <div id="trigger_condition_variable_condition_tab" style="display;none">
+        <div id="trigger_condition_variable_1">
+            <div id="monster_condition" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+                <div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+                <div id="monster_condition_main">
+                    <div id="monster_condition_tab" >
+                        <select id="monster_condition_kind" onchange="getEternalEffectConditionKind(this.value)">
+                            <option >選択</option>
+                            <option value="0">場所</option>
+                            <option value="2">変数</option>
+                        </select>
+                        <div id="variable_condition_tab" style="display;none">
+                            <select id="variable_condition_1" class="variable_condition" style="display:none">
+                            </select>
+                            <select id="variable_condition_equation_1" class="variable_condition" style="display:none">
+                                <option value="=">=</option>
+                                <option value="<=">&lt;=</option>
+                                <option value=">=">&gt;=</option>
+                                <option value="!=">!=</option>
+                            </select>
+                            <select id="variable_condition_add_1" onchange="addEternalEffectConditionVariable(1)" class="variable_condition" style="display:none">
+                                <option value=""></option>
+                                <option value="and">かつ</option>
+                                <option value="or">または</option>
+                            </select>
+                            <div id="variable_equation" style="display:none"></div>
+                            <input type="text" id="variable_equation_val_1" onfocus="showMonsterEquation('variable_equation_val_1')">
+                        </div>
+                        <div id="monster_condition_place_tab" style="display:none">
+                            <select id="monster_condition_place_1" class="monster_condition_place" style="display:none">
+                            </select>
+                            <select id="monster_condition_place_add_1" onchange="addEternalEffectConditionPlace(1)" class="monster_condition_place" style="display:none">
+                                <option value=""></option>
+                                <option value="and">かつ</option>
+                                <option value="or">または</option>
+                            </select>
+                            <div id="monster_monster" style="display:none"></div>
+                            <div id="monster_equation_1" class="monster_equation" style="display:none"></div>
+                        </div>
+                    </div>
+                    <div id="as_monster_condition" >
+                        as <input type="text" id="as_eternal_effect_condition">
+                    </div >
+                    <input type="button" value="追加" onclick="putEternalEffectCondition()">
+                </div>
+            </div>
+            <select id="trigger_condition_kind" onchange="getConditionKind('trigger_condition',this.value,100,0)">
+                <option >選択</option>
+                <option value="0">場所</option>
+                <option value="2">変数</option>
+            </select>
+            <div id="trigger_condition_variable_condition_tab" style="display;none">
+                <div id="trigger_condition_variable_1">
+                    <input type="text" id="trigger_condition_variable_condition_1" class="variable_condition" style="">
+                    <select id="trigger_condition_variable_condition_equation_1" class="variable_condition" style="">
+                        <option value="=">=</option>
+                        <option value="<=">&lt;=</option>
+                        <option value=">=">&gt;=</option>
+                        <option value="!=">!=</option>
+                    </select>
+                    <select id="trigger_condition_variable_condition_add_1" onchange="addVariable('trigger_condition',1)" class="variable_condition" style="">
+                        <option value=""></option>
+                        <option value="and">かつ</option>
+                        <option value="or">または</option>
+                    </select>
+                    <input type="text" id="trigger_condition_variable_equation_val_1" onfocus="showMonsterEquation('triggeer_condition_variable_equation_val_1')">
+                    <input type="button" value="追加" onclick="addVariableCondition('trigger_condition',1)">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="trigger_condition_who_choose" style="display:none">
+        <input type="button" value="自分" onclick="displayConditionAll('trigger_condition',0)" class="active" id="">
+        <input type="button" value="相手" onclick="displayConditionAll('trigger_condition',1)" class="active" id="">
+    </div>
+    <div id="trigger_condition_place_tab" style="display:none">
+        <input type="button" value="1" onclick="displayConditionAll('trigger_condition',0)" class="active" id="trigger_condition_all_button_0"><input id="trigger_condition_all_add_button_0" type="button" value="追加" onclick="addConditionPlaceAll('trigger_condition',0)">
+        <div id="choose_trigger_condition_0">
+            <input type="button" value="条件1" onclick="displayCondition('trigger_condition',0,1)" class="active" id="trigger_condition_button_0_1"><input type="button" value="追加" id="trigger_condition_add_button_0_1" onclick="addConditionPlace('trigger_condition',0,1)"><br>
+            <select id="trigger_condition_place_0_0" class="trigger_condition_place" style="display:none">
+            </select>
+            <select id="trigger_condition_place_add_0_0" onchange="addPlace('trigger_condition_place',0,1)" class="trigger_condition_place" style="display:none">
+                <option value=""></option>
+                <option value="and">かつ</option>
+                <option value="or">または</option>
+            </select>
+        </div>
+        <select id="monster_effect_move_how">
+            <option value="0">上から</option>
+            <option value="1">下から</option>
+            <option value="2">ランダム</option>
+        </select>
+        <div id="trigger_condition_0_1">
+        </div>
+        カード有無<input type="checkbox" id="monster_exist" value="1">
+        選択表示<input type="text" id="sentence" value="">
+        <div id="trigger_condition_field_x_and_y_0">
+        </div>
+        <div id="trigger_condition_equation_0" class="trigger_condition_equation" style="display:none"></div>
+        <div id="as_trigger_condition_wrapper_0">
+            as<input type="text" id="as_trigger_condition_0">
+        </div>
+<input type="button" value="追加" onclick="putCondition()">
+</div>
+</div>
+<div id="eternal_effect_monster" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+<div id="monster_monster_main">
+<div id="monster_monster_tab" >
+<div id="monster_monster_place_tab" style="display:none">
+<select id="monster_monster_place_1" class="monster_monster_place" style="display:none">
+</select>
+<select id="monster_monster_place_add_1" onchange="addEternalEffectMonsterPlace(1)" class="monster_monster_place" style="display:none">
+<option value=""></option>
+<option value="or">または</option>
+</select>
+<div id="monster_monster_monster" style="display:none"></div>
+</div>
+<div>
+as <input type="text" id="as_monster_monster">
+</div>
+	</div>
+<input type="button" value="追加" onclick="putEternalEffectMonster()">
+</div>
+</div>
+<div id="timing" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+<div id="timing_main">
+<select id="timing_phase" class="timing_phase">
+</select>
+	</div>
+<input type="button" value="追加" onclick="putTiming()">
+</div>
+<div id="equation_editor" style="width:30%;background-color:white;border:1px;display:none">
+<select id="equation_editor_place" onchange="showIfEditorPlaceIsField()">
+</select>
+<select id="editor_place_is_designated" style="display:none" onchange"showXandYForEditorPlace()">
+<option value="1">指定</option>
+<option value="0">指定しない</option>
+</select>
+x<input type="text" id="equation_editor_x" style="display:none">
+y<input type="text" id="equation_editor_y" style="display:none">
+<input type="button" value="場所追加" onclick="putPlaceToEquation()">
+<br>
+<input type="text" id="equation_editor_det"><input type="button" value="追加" onclick="putEquation()">
+</div>
+<div id="monster_affected" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+	<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+	<div id="monster_affected_main">
+		<div id="monster_affected_tab" >
+<div id="monster_affected_place_tab" style="display:none">
+<select id="monster_affected_place_1" class="monster_affected_place" style="display:none">
+</select>
+<select id="monster_affected_place_add_1" onchange="addEternalEffectConditionPlace(1)" class="monster_affected_place" style="display:none">
+<option value=""></option>
+<option value="and">かつ</option>
+<option value="or">または</option>
+</select>
+<div id="affected_monster" style="display:none"></div>
+<div id="affected_equation_1" class="monster_equation" style="display:none"></div>
+	</div>
+</div>
+<input type="button" value="追加" onclick="putEternalEffectAffectedMonster()">
+</div>
+</div>
+<div id="eternal_variable" style="display;none">
+	<select id="eternal_variable_select" class="variable_condition" style="">
+	</select>
+<input type="button" value="追加" onclick="putEternalEffectVariable()">
+</div>
+<div id="eternal_global_variable" style="display:none">
+    <select id="eternal_global_variable_select" class="variable_condition" style="">
+    </select>
+    <input type="button" value="追加" onclick="putEternalEffectVariable()">
+
+</div>
+	
+{% endblock %}

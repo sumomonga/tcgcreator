@@ -1,0 +1,17 @@
+<h1>モンスター変数設定</h1>
+<a href="/tcgcreator/new_monster_variables_kind">新規</a></td>
+
+<table>
+<tr><th>タイプ</th><th>変数名</th><th>変数の取りうる値</th></tr>
+{% for monster_variable_kind in MonsterVariablesKind %}
+	<tr>
+	<td>{{ monster_variable_kind.monster_variable_type }}</td>
+	<td>{{ monster_variable_kind.monster_variable_name }}</td>
+	<td>{{ monster_variable_kind.monster_variable_sentences }}</td>
+	<td><a href="/tcgcreator/edit_monster_variables_kind/{{ monster_variable_kind.id}}">編集</a></td>
+	<td><a href="/tcgcreator/delete_monster_variables_kind/{{ monster_variable_kind.id}}">削除</a></td>
+	</tr>
+{% endfor %}
+<tr><td colspan="5"><a href="/tcgcreator/new_monster_variables_kind">新規作成</a></td>
+</table>
+

@@ -1,0 +1,72 @@
+{% load lookup %}
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>デュエル場</title>
+<style>
+table td{
+	width:10%;
+	height:100px;
+	border:1px solid #000000;
+}
+body {
+    background-color: #FFFFFF;
+    margin-right: auto;
+    margin-left: auto;
+    margin-top: 0px;
+    font-size:12px;
+    width: 100%;
+    color:#000000;
+}
+#wrap{
+    width:100%;
+    height:768px;
+    margin:0 auto;
+    position:relative;
+    background:url(img/aozora.jpg) ;
+}
+#wrap01{
+    width:100%;
+    height:768px;
+    margin:0 auto;
+    position:relative;
+    background-color:rgba(255,255,255,0.95);/*background-color:rgbaを使用すると、現在の要素だけが透明になる。*/
+}
+td{
+	width:300px;
+}
+a{
+	color:#880000;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+<div id="wrap01" style="text-align:center">
+<h1 style="text-align:center">
+デュエル場
+</h1>
+<table style="text-align:center">
+<tr>
+<td>部屋1 {{room_text1}}{% if wait_kind1 == 0 %}　<a href="{% url "init_battle1" %}">入室</a>{% endif %}{% if watch_1 == 1 %}　<a href="{% url "watch1" %}">観戦</a>{% endif %}{% if reenter1 == 1 %}　<a href="{% url "battle1" %}">再入室</a>{% endif %}</td>
+<td>部屋2 {{room_text2}}{% if wait_kind2 == 0 %}　<a href="{% url "init_battle2" %}">入室</a>{% endif %}{% if watch_2 == 1 %}　<a href="{% url "watch2" %}">観戦</a>{% endif %}{% if reenter2 == 1 %}　<a href="{% url "battle2" %}">再入室</a>{% endif %}</td>
+<td>部屋3 {{room_text3 |linebreaksbr }}{% if wait_kind3 == 0 %}　<a href="{% url "init_battle3" %}">入室</a>{% endif %}{% if watch_3 == 1 %}　<a href="{% url "watch3" %}">観戦</a>{% endif %}{% if reenter3 == 1 %}　<a href="{% url "battle3" %}">再入室</a>{% endif %}</td>
+</tr>
+</table>
+<a style="font-size:16px;" href="{% url 'makedeck' %}">デッキ構築</a>
+<a style="font-size:16px;" href="{% url 'index' %}">戻る</a>
+</div>
+</div>
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- スモモンガーのページ別館広告 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7991794779543930"
+     data-ad-slot="9741990400"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>

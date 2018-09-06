@@ -1,0 +1,25 @@
+<html>
+<head>
+<style>
+table {
+	width:50%;
+	text-align:center;
+	background-color:#fffff0;
+}
+table td {
+	border:1px solid black;
+	padding:0px ;
+	margin:0px ;
+}
+</style>
+<meta charset="UTF-8"/> 
+<body>
+<table>
+	{% for grave_obj in graves_obj %}
+<tr>
+<td><a target="_blank" href="{% url 'explain'%}?id={{grave_obj.id}}">{{grave_obj.monster_name}}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

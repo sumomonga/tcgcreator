@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load lookup %}
+{% load static %}
+
+{% block extrastyle %}
+	{{ block.super}}
+	<link rel="stylesheet" href="{% static "css/field_kind.css" %}" type="text/css" >
+{% endblock extrastyle %}
+{% block extrahead %}
+	{{ block.super}}
+	<script src="{% static "js/mermaid.min.js" %}" type="text/javascript"></script>
+	<script>mermaid.initialize({startOnLoad:true});</script>
+{% endblock extrahead %}
+{% block content %}
+<div class="mermaid">
+{{result_html}}
+{% for c in count %}click {{ effect_ary|lookuplist:c }} "{% url 'admin:tcgcreator_monstereffectwrapper_change' effect_id_ary|lookuplist:c %}"
+{% endfor  %}
+{% for c in count_pac %}click {{ pac_ary|lookuplist:c }} "{% url 'admin:tcgcreator_pacwrapper_change' pac_id_ary|lookuplist:c %}"
+{% endfor  %}
+</div>
+{% endblock content %}

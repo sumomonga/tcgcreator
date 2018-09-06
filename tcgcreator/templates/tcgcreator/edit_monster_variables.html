@@ -1,0 +1,41 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="/static/js/jquery-2.2.0.min.js "></script>
+<script type="text/javascript" src="/static/js/ajax.js"></script>
+<script type="text/javascript">
+	var prev;
+	$(document).ready(function(){
+	$("#id_monster_variable_kind_id").change(function(){
+		getDefaultValueWidget();
+	});
+		prev = $("#id_default_value").prev();
+		value = $("#id_default_value").val();
+		getDefaultValueWidget();
+	});
+	function getDefaultValueWidget(){
+		$("#id_default_value").remove();
+	
+	var tmp=$("#id_monster_variable_kind_id").val();
+	$.ajax({
+   type: "POST",
+   url: "/tcgcreator/get_monster_kind_type/",
+   data: "delete_flag=0&monster_variable_kind_id="+tmp,
+success: function(data){
+		prev.after(data);
+		$("#id_default_value").val(value);
+        } 
+	})
+		
+	}
+</script>
+</head>
+<body>
+<form id="form1" action="{% url 'edit_monster_variables' monster_variable.id %}" method="POST">
+{% csrf_token %}
+
+{{ form.as_p }}
+<input type="submit" value="送信">
+</form>
+</body>
+</html>

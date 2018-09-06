@@ -1,0 +1,173 @@
+{% load lookup %}
+{% load static %}
+<html>
+<head>
+<meta charset="UTF-8"/> 
+<style>
+table td{
+	width:50%:
+}
+body {
+    background-color: #FFFFFF;
+    margin-right: auto;
+    margin-left: auto;
+    margin-top: 0px;
+    font-size:12px;
+    width: 100%;
+    color:#000000;
+}
+#wrap{
+    width:100%;
+    height:768px;
+    margin:0 auto;
+    position:relative;
+    background:url(img/aozora.jpg) ;
+}
+#wrap01{
+    width:100%;
+    height:768px;
+    margin:0 auto;
+    position:relative;
+    background-color:rgba(255,255,255,0.95);/*background-color:rgbaを使用すると、現在の要素だけが透明になる。*/
+}
+a{
+	color:#880000;
+}
+</style>
+<script type="text/javascript" src="{% static "js/jquery-2.2.0.min.js" %}"></script>
+<script type="text/javascript">
+	function changeDeck(val){
+		location.href="./?deck_group="+val	;
+	}
+	function back(){
+	}
+	function choose(){
+	}
+	function createNewDeck(){
+		deck_name = $("#deck_name").val();
+		location.href="./?deck_name=デッキ";
+	}
+	
+$(function(){
+    $('#allCheck').click(function(){
+	
+    if(this.checked){
+    $('.deck_monster').prop('checked','checked');
+    }else{
+    $('.deck_monster').removeAttr('checked');
+    }
+  });
+});
+</script>
+</head>
+<body>
+<!---
+<div id="wrap">
+<div id="wrap01">
+--->
+<form action = "./" method="POST">
+{% csrf_token %}
+<table width="100%">
+<tr>
+<td >
+デッキ <select name="deck_id" onchange="javascript:changeDeck(this.value)" >
+{% for default_deck_groups_tmp in  DefaultDeckGroups %}
+{% if DefaultDeckGroup == default_deck_groups_tmp %}
+<option value="{{default_deck_groups_tmp.default_deck_id}}" selected>{{default_deck_groups_tmp.deck_name}}</option>
+{% else %}
+<option value="{{default_deck_groups_tmp.default_deck_id}}">{{default_deck_groups_tmp.deck_name}}</option>
+{% endif %}
+{% endfor %}
+</select>デッキ名<input type="text" id="deck_name" name="deck_name" value="">
+<input type="button" value="新規デッキ" onclick="createNewDeck()">
+</td>
+    <td>ソート<select name="sort">
+        {% for monster_variable in  MonsterVariables %}
+
+        <option value="0">選択</option>
+        <option value="{{monster_variable.id}}">
+            {{monster_variable.monster_variable_name}}
+        </option>
+        {% endfor %}
+    </select></td>
+</tr>
+<tr>
+<td colspan="2">
+モンスター名<input type="text" name="monster_name" value="">
+</td>
+</tr>
+{% for monster_variable in  MonsterVariables %}
+{% if monster_variable.monster_variable_kind_id.id < 2 %}
+<tr><td>{{ monster_variable.monster_variable_name}}<input type="text" name="monster_variable{{ monster_variable.id }}" value="{{request.POST|lookupmonstervariable:monster_variable.id}}">
+<select name="{{monster_variable.id}}_how">
+<option value="least"
+{% if request.POST|lookuphow:monster_variable.id == "least" %}
+	selected
+{% endif %}
+ >以上</option>
+<option value="same"
+{% if request.POST|lookuphow:monster_variable.id == "same" %}
+	selected
+{% endif %}
+>ちょうど</option>
+<option value="utmost" 
+{% if request.POST|lookuphow:monster_variable.id == "utmost" %}
+	selected
+{% endif %}
+>
+以下</option>
+</select>
+</td>
+</tr>
+{% else %}
+<tr><td>
+{{ monster_variable.monster_variable_name}}　
+　<select name="monster_variable{{monster_variable.id}}">
+<option value="0" selected>すべて</option>
+{% for monster_variable_kind in  monster_variable.monster_variable_kind_id.monster_variable_sentence|split %}
+<option value="{{forloop.counter}}"
+{% if request.POST|lookupmonstervariableint:monster_variable.id == forloop.counter %}
+selected
+{% endif %}
+>{{monster_variable_kind}}</option>
+{% endfor %}
+</select>
+</td>
+</tr>
+{% endif %}
+{% endfor %}
+<tr>
+<td colspan="2">
+モンスターテキスト <input type="text" name="monster_effect" value="">
+</td>
+</tr>
+<tr><td>
+<input type="submit" value="実行">
+<ul id="cards">
+{% for monster in Monster %}
+<li>
+{% for check in monster.monster_deck|split2 %}
+<input type="checkbox" value="{{monster.id}}" name="monster_deck_{{check}}">
+{% endfor %}
+<a target="_blank"  title="" href="explain.php?id={{monster.id}}">{{monster.monster_name}}{{monster.id|monsteritem}}</a><span style="color:red"></span><br></li>
+{% endfor %}
+</ul>
+<input type="submit" value="実行">
+</td>
+<td valign="top" style="vertical-align:top" id="deck_cards">
+<input type="submit" value="実行">
+{% for deck in Deck %}
+<div style="font-size:20px">{{deck.deck_name}}  
+{% autoescape off %}
+{{ DefaultDeck|get_user_deck:deck}}
+{% endautoescape %}
+{% endfor %}
+<input type="submit" value="実行">
+</td>
+</tr></table>
+</form>
+</body>
+</html>
+
+
+

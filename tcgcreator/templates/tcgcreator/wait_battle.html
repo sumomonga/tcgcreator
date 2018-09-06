@@ -1,0 +1,44 @@
+{% load static %}
+<html>
+<head>
+<meta charset="utf-8">
+<script type="text/javascript" src="{% static 'js/jquery-2.2.0.min.js'%}"></script>
+<script type="text/javascript" src="{% static 'js/ajax.js'%}"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+	    setTimeout(Reload,5000);
+	});
+	function Reload(){
+	    switch({{room_number}}){
+	        case 1:
+    	        location.href = "{% url 'init_battle1' %}";
+    	        break;
+	        case 2:
+    	        location.href = "{% url 'init_battle2' %}";
+    	        break;
+	        case 3:
+    	        location.href = "{% url 'init_battle3' %}";
+    	        break;
+    	}
+
+	}
+	function sendLeave(){
+	    switch({{room_number}}){
+	        case 1:
+    	        location.href = "{% url 'leave_battle1' %}";
+    	        break;
+	        case 2:
+    	        location.href = "{% url 'leave_battle2' %}";
+    	        break;
+	        case 3:
+    	        location.href = "{% url 'leave_battle3' %}";
+    	        break;
+    	}
+	}
+</script>
+</head>
+<body>
+対戦相手を待っています。
+<input type="button" value="落ち" onclick="sendLeave()">
+</body>
+</html>

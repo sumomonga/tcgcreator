@@ -1,0 +1,192 @@
+{% extends "admin/change_form.html" %} 
+{% block footer %}
+<div id="monster_effect_move" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+<div id="monster_who" style="display:none">
+<select id="monster_effect_who">
+<option value="0">自分</option>
+<option value="1">相手</option>
+</select>
+</div>
+<div id="monster_effect_move_main">
+<select id="monster_effect_move_kind" onchange="getMonsterEffectMoveKind2(this.value)">
+<option value="0">場所指定</option>
+<option value="1">場所</option>
+</select>
+<select id="monster_effect_move_place_1" class="monster_effect_move_place" style="display:none" onchange="getWhetherIsField(this.value)">
+</select>
+<select id="monster_effect_move_place_add_1" onchange="addMonsterEffectMovePlace(1)" class="monster_effect_move_place" style="display:none">
+<option value=""></option>
+<option value="and">かつ</option>
+<option value="or">または</option>
+</select>
+<div id="monster_monster_effect_move" style="display:none"></div>
+<div id="monster_equation" style="display:none"></div>
+<div id="monster_effect_move_how_main" style="display:none"></div>
+<select id="monster_effect_move_how">
+<option value="0">上から</option>
+<option value="1">下から</option>
+<option value="2">ランダム</option>
+</select>
+<div id="field_whether_monster_exists" style="display:none">
+カード有無<input type="checkbox" id="monster_exist" value="1">
+フィールドx位置<input id="field_x" style="display:none">
+フィールドy位置<input id="field_y" style="display:none">
+</div>
+<div id="as_monster_from" style="display:none">
+as <input type="text" id="as_monster_effect_from">
+</div >
+<div id="monster_from_sentence" style="">
+表示 <input type="text" id="monster_sentence">
+</div >
+<div id="flag_add" style="">
+フラグ <input type="checkbox" id="flag_add_det"  value="1">
+</div >
+<select id="monster_effect_move_place_1_to" class="monster_effect_move_place" style="display:none" onchange="getWhetherIsFieldTo(this.value)">
+</select>
+<select id="monster_effect_move_how_to">
+<option value="0">上に</option>
+<option value="1">下に</option>
+<option value="2">ランダム</option>
+</select>
+<div id="as_monster_to" style="display:none">
+as <input type="text" id="as_monster_effect_to">
+</div >
+<div id="field_to" style="display:none">
+フィールドx位置<input id="field_x_to" style="display:none">
+フィールドy位置<input id="field_y_to" style="display:none">
+</div>
+<input type="button" value="追加" onclick="putMonsterEffectMove()">
+	</div>
+</div>
+<div id="monster_effect_change_turn" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<select id="monster_change_turn">
+</select>
+<input type="button" value="追加" onclick="putMonsterEffectChangeTurn()">
+</div>
+<div id="monster_effect_phase_move" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<select id="monster_change_phase">
+</select>
+<input type="button" value="追加" onclick="putMonsterEffectMovePhase()">
+</div>
+<div id="variable_change" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+<select id="variable_name">
+</select>
+<select id="variable_who">
+<option value="0">共通</option>
+<option value="1">自分</option>
+<option value="2">相手</option>
+</select>
+<div id="variable_change_main">
+<select id="variable_change_kind" onchange="getVariableChangeKind(this.value)">
+<option value="0">変数変更</option>
+</select>
+<select id="variable_change_how">
+<option value="0">増やす</option>
+<option value="1">減らす</option>
+<option value="2">指定</option>
+</select>
+<input type="text" id="variable_change_val" onfocus="showVariableEquation()">
+<input type="button" value="追加" onclick="putVariableChange()">
+</div>
+</div>
+<div id="monster_variable_change" style="width:50%;min-height:200px;background-color:white;border:1px solid #000000">
+<div id="monster_variable_place_tab" style="display:none">
+<select id="monster_variable_place_1" class="monster_variable_place" style="display:none">
+</select>
+<select id="monster_variable_place_add_1" onchange="addMonsterConditionPlace(1)" class="monster_variable_place" style="display:none">
+<option value=""></option>
+<option value="and">かつ</option>
+<option value="or">または</option>
+</select>
+</div>
+<div id="monster_variable_monster" style="display:none"></div>
+<div id="monster_variable_equation_1" class="monster_equation" style="display:none"></div>
+<div id="monster_variable_change_main">
+<div id="as_monster_variable_from" >
+as <input type="text" id="as_monster_effect_variable_from">
+</div>
+変数変更名<input type="text" id="monster_variable_change_name">
+<select id="monster_variable_change_how">
+<option value="0">増やす</option>
+<option value="1">減らす</option>
+<option value="2">指定</option>
+</select>
+<input type="text" id="monster_variable_change_val" onfocus="showMonsterVariableEquation()">
+<input type="button" value="追加" onclick="putMonsterVariableChange()">
+</div>
+</div>
+
+<div id="monster_condition" style="width:50%;min-height:200px;display:none;background-color:white;border:1px solid #000000">
+	<div style="background-color:#EEEEFF;height:15px;text-align:center">条件</div>
+	<div id="monster_condition_main">
+		<div id="monster_condition_tab" >
+			<select id="monster_condition_kind" onchange="getMonsterConditionKind(this.value)">
+			<option >選択</option>
+<option value="0">場所</option>
+<option value="1">場所指定</option>
+<option value="2">変数</option>
+</select>
+<div id="variable_condition_tab" style="display;none">
+	<select id="variable_condition_1" class="variable_condition" style="display:none">
+	</select>
+	<select id="variable_condition_equation_1" class="variable_condition" style="display:none">
+	<option value="=">=</option>
+	<option value="<=">&lt;=</option>
+	<option value=">=">&gt;=</option>
+	<option value="!=">!=</option>
+	</select>
+	<select id="variable_condition_add_1" onchange="addMonsterConditionVariable(1)" class="variable_condition" style="display:none">
+	<option value=""></option>
+	<option value="and">かつ</option>
+	<option value="or">または</option>
+	</select>
+	<div id="variable_equation" style="display:none"></div>
+	<input type="text" id="variable_equation_val_1" onfocus="showMonsterEquation('variable_equation_val_1')">
+</div>
+<div id="monster_condition_place_tab" style="display:none">
+<select id="monster_condition_place_1" class="monster_condition_place" style="display:none">
+</select>
+<select id="monster_condition_place_add_1" onchange="addMonsterConditionPlace(1)" class="monster_condition_place" style="display:none">
+<option value=""></option>
+<option value="and">かつ</option>
+<option value="or">または</option>
+</select>
+<div id="monster_monster" style="display:none"></div>
+<div id="monster_equation_1" class="monster_equation" style="display:none"></div>
+	</div>
+</div>
+<div id="as_monster_condition" >
+as <input type="text" id="as_monster_effect_condition">
+</div >
+<input type="button" value="追加" onclick="putMonsterCondition()">
+</div>
+</div>	
+	
+<div id="equation_editor" style="width:30%;background-color:white;border:1px;display:none">
+<select id="equation_editor_place" onchange="showIfEditorPlaceIsField()">
+</select>
+<select id="editor_place_is_designated" style="display:none" onchange"showXandYForEditorPlace()">
+<option value="1">指定</option>
+<option value="0">指定しない</option>
+</select>
+x<input type="text" id="equation_editor_x" style="display:none">
+y<input type="text" id="equation_editor_y" style="display:none">
+<input type="button" value="場所追加" onclick="putPlaceToEquation()">
+<br>
+<input type="text" id="equation_editor_det"><input type="button" value="追加" onclick="putEquation()">
+</div>
+<div id="shuffle" style="display:none">
+<select id="monster_effect_shuffle_place" class="monster_effect_shuffle_place" ></select><br>
+<input type="button" value="追加" onclick="putShuffle('id_monster_effect')">
+</div>
+<div id="raise_trigger" style="display:none">
+<select id="monster_effect_raise_trigger" class="monster_effect_raise_trigger" ></select><br>
+<input type="button" value="追加" onclick="putRaiseTrigger('id_monster_effect')">
+</div>
+<div id="clear" style="display:none">
+<select id="clear_place" class="clear_place" ></select><br>
+<input type="button" value="追加" onclick="putClear()">
+</div>
+{% endblock %}

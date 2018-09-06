@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<title>カードル</title>
+<link rel="stylesheet" href="style.css" type="text/css" ?="">
+</head>
+<body>
+<!-- ヘッダー-->
+<div id="container">
+<div id="header">
+<h1><a href="http://sumomonga.xyz/cardol/">カードル</a></h1>
+<p id="desc">自作TCGのウェブゲームのページ<a href="http://twitter.com/sumomonga1"><img src="img/twitter.png" width="20px" height="20px"/></a></p>
+<div id="nav">
+<div class="menu">
+<ul><li class="page_item page-item-2"><a class="cur" href="http://sumomonga.xyz">TOP</a></li>
+
+<li class="page_item page-item-2"><a href="{% url 'signup' %}">ユーザー登録</a></li>
+<?php
+}
+?>
+<li class="page_item page-item-2"><a href="{% url 'makedeck' %}">デッキ構築</a></li>
+<li class="page_item page-item-4"><a href="{% url 'choose' %}">デュエル場</a></li></ul>
+<li class="page_item page-item-2"><a href="{% url 'logout' %}">ログアウト</a></li>
+<li class="page_item page-item-2"><a href="http://sumomonga.at-ninja.jp">本館</a></li>
+</ul>
+</div>
+</div>
+<div id="image"><img src="img/aozora.jpg" alt="*" width="HEADER_WIDTH" height="228"><div>
+</div>
+<div class="post">
+<div style="clear:both"></div>
+<p>コンテンツ</p>
+<ul>
+<li>
+<a href="{% url 'login' %}"><h2 style="background-color:#DDDDDD">ログイン</h2></a><br>
+</li>
+<li>
+<a href="{% url 'signup' %}"><h2 style="background-color:#DDDDDD">ユーザー登録</h2></a><br>一番はじめはユーザー登録をしていただく必要があります
+</li>
+<li>
+<a href="{% url 'howto' %}"><h2 style="background-color:#FFDDEE">遊び方</h2></a><br>
+はじめにお読みください。
+</li>
+<li>
+<a href="{% url 'makedeck' %}"><h2 style="background-color:#FFFFDD">デッキ構築</h2></a><br>まずは戦いにそなえてデッキ構築をしましょう
+</li>
+<li>
+<a href="{% url 'choose' %}"><h2 style="background-color:#DDFFFF">デュエル場</h2></a><br>デッキを作り終えたらデュエル場でデュエル！
+</li>
+<li>
+<a href="https://twitter.com/sumomonga1"><h2 style="background-color:#DDFFDD">バグ報告(twitter)</h2></a><br>バグがあったらツイッターで報告していただければ幸いです。私にダイレクトメッセージを送ってください。その際必ずduel_idを一緒に送ってください。（内容を確認から確認できます。）
+</li>
+<li>
+<a href="{% url 'logout' %}"><h2 style="background-color:#DDDDDD">ログアウト</h2></a><br>
+ログアウトします。
+</li>
+<li>
+<a href="https://sumomonga.at-ninja.jp"><h2>スモモンガーのページ本館</h2></a><br>しょっぱいゲームとしょぼい研究があります。一応本館ですwww
+</li>
+</div>
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- スモモンガーのページ別館広告 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7991794779543930"
+     data-ad-slot="9741990400"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+
+</div></div></body></html>
