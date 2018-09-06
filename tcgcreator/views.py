@@ -684,8 +684,8 @@ def get_monster_trigger_condition(req):
     result+="フラグ <input type=\"text\" id=\"flag\">"
     result+='<select id="flag_equal"><option value="">全て</option><option value="=">=</option></select><br>'
     result+="モンスター名 <input type=\"text\" id=\"monster_name_0\" onfocus=\"showMonsterNameEqual('"+str(i)+"_0')\" >"
-    result+='モンスター位置<input type=\"text\" id=\"monster_place_id_0\">'
-    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id_0\">'
+    result+='モンスター位置<input type=\"text\" id=\"monster_place_id_0_1_0\">'
+    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id_0_1_0\">'
     result+='<select id="get_monster_name_equal_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'
     result+='<select id="monster_name_and_or_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_name_add_0" type="button" value="追加"  onclick="addMonsterName(\''+str(i)+'_0\')"><br>'
     for monster_variable in monster_variables:
@@ -773,8 +773,8 @@ def get_monster_condition(req):
     result+="フラグ <input type=\"text\" id=\"flag"+add_j+add_i+"\">"
     result+='<select id="flag_equal'+add_j+add_i+'"><option value="">全て</option><option value="=">=</option></select><br>'
     result+="モンスター名 <input type=\"text\" id=\"monster_name"+add_j+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(j)+"_"+str(i)+"_0')\" >"
-    result+='モンスター位置<input type=\"text\" id=\"monster_place_id'+add_j+add_i+'_0\">'
-    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id'+add_j+add_i+'_0\">'
+    result+='モンスター位置<input type=\"text\" id=\"monster_place_id'+add_j+add_i+'\">'
+    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id'+add_j+add_i+'\">'
     result+='<select id="get_monster_name_equal'+add_j+add_i+'_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'
     result+='<select id="monster_name_and_or'+add_j+add_i+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_name_add'+add_j+add_i+'_0" type="button" value="追加"  onclick="addMonsterName(\''+str(j)+"_"+str(i)+'_0\')"><br>'
     for monster_variable in monster_variables:
