@@ -256,6 +256,13 @@ class DuelObj:
             if(flag["operator"] == "="):
                 if(monster["flag"] != int(flag["flag_det"])):
                     return False
+        if("place_id" in monster_condition and monster_condition["place_id"]!= ""):
+            if monster["place_unique_id"] != self.get_place_unique_id(monster_condition["place_id"]):
+                return False
+        if("unique_id" in monster_condition and monster_condition["unique_id"]!= ""):
+            if monster["card_unique_id"] != self.get_card_unique_id(monster_condition["unique_id"]):
+                return False
+
         monster_name_kind =  monster_condition["monster_name_kind"]
         name_flag = True;
         current_and_or = "and"
@@ -1091,6 +1098,13 @@ class DuelObj:
         if "add" in tmp2[val_name] :
             return_value += int(tmp2[val_name]["add"])
         return return_value
+    def get_place_unique_id(self,val,mode=0):
+        if(val[0] == "~"):
+            return self.get_place_unique_id_cost(val,mode)
+        elif(val[0] == "%"):
+            return self.get_place_unique_id_timing_mess(val,mode)
+        else:
+            return self.get_place_unique_id_effect(val,mode)
     def get_name(self,val,mode=0):
         if(val[0] != "{"):
             return val
@@ -1115,6 +1129,46 @@ class DuelObj:
             return self.get_name_timing_mess_all(val,mode)
         else:
             return self.get_name_effect_all(val,mode)
+    def get_place_unique_id_cost(self,val,mode):
+        duel = self.duel
+        val = val[1:]
+        tmp = self.cost
+        tmp = tmp[str(duel.chain)][val]
+        tmp = tmp[0]
+        return tmp["det"]["place_unique_id"]
+    def get_place_unique_id_timing_mess(self,val,mode):
+        duel = self.duel
+        val = val[1:]
+        tmp = self.timing_mess
+        tmp = tmp[val]
+        tmp = tmp[0]
+        return tmp["det"]["place_unique_id"]
+    def get_place_unique_id_effect(self,val,mode):
+        duel = self.duel
+        tmp = self.mess
+        tmp = tmp[str(duel.chain-1)][val]
+        tmp = tmp[0]
+        return tmp["det"]["place_unique_id"]
+    def get_card_unique_id_cost(self,val,mode):
+        duel = self.duel
+        val = val[1:]
+        tmp = self.cost
+        tmp = tmp[str(duel.chain)][val]
+        tmp = tmp[0]
+        return tmp["det"]["card_unique_id"]
+    def get_card_unique_id_timing_mess(self,val,mode):
+        duel = self.duel
+        val = val[1:]
+        tmp = self.timing_mess
+        tmp = tmp[val]
+        tmp = tmp[0]
+        return tmp["det"]["card_unique_id"]
+    def get_card_unique_id_effect(self,val,mode):
+        duel = self.duel
+        tmp = self.mess
+        tmp = tmp[str(duel.chain-1)][val]
+        tmp = tmp[0]
+        return tmp["det"]["card_unique_id"]
     def get_name_cost(self,val,mode):
         duel = self.duel
         val = val[2:-1]
