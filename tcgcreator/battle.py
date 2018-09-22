@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
@@ -23,7 +23,7 @@ def battle(request,room_number):
     config = Config.objects.first()
     gray_out = config.gray_out
     limit_time = config.limit_time
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).get()
     if not duel.user_2 :

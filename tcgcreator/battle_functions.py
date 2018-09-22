@@ -144,7 +144,7 @@ def init_duel(room_number,user):
     duel.winner = 0
     duel.duel_id = str(uuid.uuid4())
     duel.cost_log = ""
-    duel.log = "デュエルID " + duel.duel_id
+    duel.log = "デュエルID " + duel.duel_id + "\n"
     duel.log_turn = duel.log
     duel.phase = start_phase
     duel.audio = ""
@@ -171,7 +171,13 @@ def init_duel(room_number,user):
     duel.cost_det = 0
     duel.chain = 0
     duel.in_cost = False
-    duel.user_turn  =random.randrange(1,2)
+    duel.user_turn  =random.randrange(1,3)
+    if duel.user_turn == 1:
+        duel.log += duel.user_1.first_name  + "のターンからスタート\n"
+        duel.log_turn += duel.user_1.first_name  + "のターンからスタート\n"
+    elif duel.user_turn == 2:
+        duel.log += duel.user_2.first_name  + "のターンからスタート\n"
+        duel.log_turn += duel.user_2.first_name  + "のターンからスタート\n"
     duel.appoint  = duel.user_turn
     duel.current_priority  = 10000
     duel.ask = 0
@@ -248,7 +254,7 @@ def check_in_other_room(user,room_number):
         if i == room_number:
             continue
         duel = Duel.objects.filter(id=i).first();
-        if duel.waiting == 0 and (duel.user_1 == user or duel.user_2 == user):
+        if duel.waiting == 0 and duel.winner == 0 and (duel.user_1 == user or duel.user_2 == user):
             return True
         elif duel.waiting == 1 and (duel.user_1 == user and duel.user_2 is None):
             return True

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
@@ -20,7 +20,7 @@ def ask_place(request):
     hands = Hand.objects.all()
     room_number =int(request.POST["room_number"])
     config = Config.objects.first()
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).get()
     phases = Phase.objects.order_by('-priority').filter(show =1)
@@ -301,6 +301,7 @@ def show(duel,user,room_number,ask,decks,graves,hands):
     tmp_val["exclude"] = val_exclude
     return HttpResponse(json.dumps(tmp_val))
 def return_deck(duelobj,duel,deck_id,user,mine_or_other,deck_name,room_number,exclude="",monster_effect_det=None):
+    mine_or_other = int(mine_or_other)
     html = {}
     html["deck_id"] = deck_id;
     html["mine_or_other_val"] = mine_or_other;
@@ -321,9 +322,9 @@ def return_deck(duelobj,duel,deck_id,user,mine_or_other,deck_name,room_number,ex
         mess = mess[str(duel.chain-1)]
     else:
         mess= []
-    if mine_or_other == "1":
+    if mine_or_other == 1:
             html["mine_or_other"] = "自分の"+deck_name
-    elif mine_or_other == "2":
+    elif mine_or_other == 2:
             html["mine_or_other"] = "相手の"+deck_name
             if user == 1:
                 user = 2
@@ -331,11 +332,11 @@ def return_deck(duelobj,duel,deck_id,user,mine_or_other,deck_name,room_number,ex
                 user = 1
     else:
             html["mine_or_other"] = "共通の"+deck_name
-    if mine_or_other == "1":
+    if mine_or_other == 1:
         tmp = duelobj.decks[deck_id]["mydeck"]
-    elif mine_or_other == "2":
+    elif mine_or_other == 2:
         tmp = duelobj.decks[deck_id]["otherdeck"]
-    elif mine_or_other == "3":
+    elif mine_or_other == 3 or mine_or_other == 0:
         tmp = duelobj.decks[deck_id]["commondeck"]
     user_decks = tmp
     html["cards"] = []
@@ -362,15 +363,16 @@ def return_deck(duelobj,duel,deck_id,user,mine_or_other,deck_name,room_number,ex
             html["cards"].append(tmp)
     return html
 def return_grave(duelobj,duel,grave_id,user,mine_or_other,grave_name,room_number,exclude="",monster_effect_det=None):
+    mine_or_other = int(mine_or_other)
     cost =json.loads(duel.cost)
     mess =json.loads(duel.mess)
     effect_kind = duel.ask_kind
     html = {}
     html["grave_id"] = grave_id;
     html["mine_or_other_val"] = mine_or_other;
-    if mine_or_other == "1":
+    if mine_or_other == 1:
             html["mine_or_other"] = "自分の"+grave_name
-    elif mine_or_other == "2":
+    elif mine_or_other == 2:
             html["mine_or_other"] = "相手の"+grave_name
             if user == 1:
                 user = 2
@@ -409,6 +411,7 @@ def return_grave(duelobj,duel,grave_id,user,mine_or_other,grave_name,room_number
             html["grave"].append(tmp)
     return html
 def return_hand(duelobj,duel,hand_id,user,mine_or_other,hand_name,room_number,exclude="",monster_effect_det=None):
+    mine_or_other = int(mine_or_other)
     html = {}
     html["hand_id"] = hand_id;
     html["mine_or_other_val"] = mine_or_other;
@@ -416,9 +419,9 @@ def return_hand(duelobj,duel,hand_id,user,mine_or_other,hand_name,room_number,ex
     mess =json.loads(duel.mess)
     timing_mess =json.loads(duel.timing_mess)
     effect_kind = duel.ask_kind
-    if mine_or_other == "1":
+    if mine_or_other == 1:
             html["mine_or_other"] = "自分の"+hand_name
-    elif mine_or_other == "2":
+    elif mine_or_other == 2:
             html["mine_or_other"] = "相手の"+hand_name
             if user == 1:
                 user = 2

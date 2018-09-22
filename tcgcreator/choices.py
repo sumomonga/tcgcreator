@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
@@ -20,7 +20,7 @@ def choices(request):
     room_number =int(request.POST["room_number"])
     trigger_id = request.POST["trigger_id"]
     config = Config.objects.first()
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).get()
     if(duel.user_1 != request.user and duel.user_2 != request.user):

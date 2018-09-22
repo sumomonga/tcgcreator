@@ -80,6 +80,7 @@ urlpatterns = [
 	url(r'^get_tcg_timing/$',views.get_tcg_timing,name='get_tcg_timing'),
 	url(r'^get_monster_variable/$',get_monster_variable.get_monster_variable,name='get_monster_variable'),
     url(r'^signup/$', views.signup, name='signup'),
+    url(r'^user_info_change/$', views.user_info_change, name='user_info_change'),
     url(r'^index/$', views.index, name='index'),
     url(r'^howto/$', views.howto, name='howto'),
 

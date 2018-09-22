@@ -224,9 +224,121 @@
         }
     })
     }else{
-        getConditionKindWithData();
+        getConditionKindWithData(id_det,kind,y,x);
     }
     }
+    function getConditionKindWithData(id_det,kind,y,x){
+        global_id = id_det;
+        global_mode = kind;
+        if(kind == undefined){
+            kind =-1;
+        }
+        id="trigger_condition";
+        var val = $("#id_"+id_det).val();
+        val = JSON.parse(val);
+        $("#"+id).show();
+        $("#"+id).draggable();
+        $("#"+id).offset({top:x,left:y});
+        $("#"+id+"_0_1").show();
+    $.ajax({
+   'type': "POST",
+   'url': "/tcgcreator/get_place_kind/",
+   'data': "i=1",
+'success': function(data){
+        $("."+id+"_place").show();
+        $("#"+id+"_place_0_0").html(data);
+        $.ajax({
+               'type': "POST",
+               'url': "/tcgcreator/get_monster_condition/",
+               'data': "i=1&j=0",
+            'success': function(data){
+                    $("#"+id+"_0_1").html("<div id=\"monster_monster_0_1\"></div>");
+
+                    $("#monster_monster_0_1").html(data);
+                    if(kind != 3){
+                    $.ajax({
+                         'type': "POST",
+                         'url': "/tcgcreator/get_equation/",
+                         'data': "c=0",
+                        'success': function(data){
+                            $("."+id+"_equation").show();
+                            $("#"+id+"_equation_0").html(data);
+            putConditionVal(0,val);
+            for(k=1;val["monster"][k] != undefined;k++){
+                addConditionPlaceAll(id,k);
+                putConditionVal(k,val);
+            }
+                         }
+                    })
+                    }
+                    $.ajax({
+                         'type': "POST",
+                         'url': "/tcgcreator/get_field_x_and_y/",
+                         'data': "id="+id+"&c=0",
+                        'success': function(data){
+                            $("."+id+"_field_x_and_y_0").show();
+                            $("#"+id+"_field_x_and_y_0").html(data);
+        if(kind == 3 || kind == 4 || kind == 1){
+            if($.inArray("exclude",val)){
+                $("#exclude_change_variable").val(val["exclude"]);
+            }
+            if($.inArray("flag_change_how",val)){
+                $("#flag_change_how").val(val["flag_change_how"]);
+            }
+            if($.inArray("flag_change_val",val)){
+                $("#flag_change_val").val(val["flag_change_val"]);
+            }
+            $("#monster_variable_change").show();
+            $("#monster_effect_place_to").show();
+            $.ajax({
+           'type': "POST",
+        'url': "/tcgcreator/get_place_kind_to/",
+   'data': "i=1",
+'success': function(data){
+        $("#monster_effect_place_1_to").html(data);
+        $("#monster_effect_place_1_to").val(val["place_to"][0]);
+        if(val["monster_variable_change_name"][0] != undefined){
+            $("#monster_variable_change_name_"+0).val(val["monster_variable_change_name"][0]) ;
+            $("#monster_variable_change_how_"+0).val(val["monster_variable_change_how"][0]);
+            $("#monster_variable_change_val_"+0).val(val["monster_variable_change_val"][0]);
+            for(k=1;val["monster_variable_change_name"][k]!= undefined;k++){
+	            addMonsterVariableChange(k-1);
+                $("#monster_variable_change_name_"+k).val( val["monster_variable_change_name"][k] );
+                $("#monster_variable_change_how_"+k).val(val["monster_variable_change_how"][k]);
+                $("#monster_variable_change_val_"+k).val(val["monster_variable_change_val"][k]);
+            }
+        }
+        }
+        });
+        }else{
+            $("#monster_variable_change").hide();
+            $("#monster_effect_place_to").hide();
+        }
+        if(kind == 4){
+            $("#monster_effect_move_to").show();
+            $("#monster_effect_move_how").val(val["move_how"] );
+            $("#monster_effect_move_how_to").val(val["move_how_to"] );
+            $("#monster_effect_place_1_to").val(val["place_to"][0]);
+            $("#as_monster_effect_to").val(val["as_monster_condition_to"]);
+            if(val["field_x_to"] != undefined){
+                $("#monster_effect_field_x_to").val(val["field_x_to"]);
+            }
+            if(val["field_y_to"] != undefined){
+                $("#monster_effect_field_y_to").val(val["field_y_to"]);
+            }
+            $("#trigger_condition_all_add_button_0").hide();
+        }else{
+            $("#monster_effect_move_to").hide();
+            $("#trigger_condition_all_add_button_0").show();
+        }
+        }
+                    })
+                    }
+                })
+        }
+    })
+    }
+    /*
     function getConditionKindWithData(){
         var id="trigger_condition";
         var id_det=global_id;
@@ -237,8 +349,8 @@
         if(global_mode==3 || global_mode == 4 || global_mode ==1 ){
 
         $("#exclude_change_variable").val(val["exclude"]);
-        $("#flag_change_how").val(val(["flag_change_how"]));
-        $("#flag_change_val").val(val(["flag_change_val"]));
+        $("#flag_change_how").val(val["flag_change_how"]);
+        $("#flag_change_val").val(val["flag_change_val"]);
         for(k=0;k<val["monster_variable_name"].length;k++){
             if($("#monster_variable_name_"+k).length == 0){
                 addMonsterVariableChange(k-1);
@@ -249,6 +361,7 @@
         $("#monster_variable_change_val_"+k).val(val["monster_variable_change_val"][k] );
         $("#monster_variable_change_name_"+k).val(val["monster_variable_change_name"][k]);
         }
+            }
         $("#as_monster_variable_from").val(val["monster_variable_as"]  );
         }
 
@@ -348,6 +461,76 @@
     })(i,c)
     }
     }
+    }
+    */
+    function putConditionVal(m,val){
+        json = {};
+        var tmp = {};
+        place = [];
+        json = val["monster"][m]["monster"];
+        for(l=0;json["place"][l]!= undefined;l++){
+        place = json["place"][l];
+        $("#"+id+"_place_add_"+m+"_"+l).val(place["and_or"]);
+        $("#"+id+"_place_"+m+"_"+l).val(place["det"]);
+        }
+        for(var i=1;json[i] != undefined;i++){
+            json2 = json[i];
+            $("#monster_place_id_"+m+"_"+i).val(json2["place_id"]);
+            $("#monster_unique_id_"+m+"_"+i).val(json2["unique_id"]);
+            for(var j=0;json2["monster_name_kind"][j] != undefined;j++){
+                $("#get_monster_name_equal_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["operator"]) ;
+                $("#monster_name_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["monster_name"]);
+                $("#monster_name_and_or_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["and_or"]);
+            }
+        }
+        if(json["flag"]["operator"]!= undefined){
+           $("#flag_equal_"+m+"_"+i).val(json["flag"]["operator"]);
+            $("#flag_"+m+"_"+i).val(json["flag"]["flag_det"] );
+        }
+        for(j=1;json["monster_condition"][j] != undefined;j++){
+            for(p=1;$("#get_monster_variable_"+m+"_"+i+"_"+p+"_0").length != 0;p++){
+                if(json["monster_condition"][j][0]["name"] == $("#get_monster_variable_name_"+m+"_"+i+"_"+p).val()){
+                    break;
+                }
+            }
+            $("#monster_variable_init_"+m+"_"+i+"_"+p+"_"+0).val(json["monster_condition"][j][0]["init"]);
+            for(k=0;json["monster_condition"][j][k] != undefined;k++){
+
+                $("#get_monster_variable_"+m+"_"+i+"_"+j+"_"+p).val(json["monster_condition"][j][k]["num"]);
+                $("#get_monster_variable_equal_"+m+"_"+i+"_"+j+"_"+k).val(json["monster_condition"][j][k]["operator"]);
+                $("#monster_variable_and_or_"+m+"_"+i+"_"+j+"_"+k).val(json["monster_condition"][j][k]["and_or"]);
+            }
+         }
+        for(j=1;json["custom_monster_condition"][j] != undefined;j++){
+            for(k=0;json["custom_monster_condition"][j][k] != undefined;k++){
+                if(k==0){
+                    addCustomMonsterCondition(m+'_'+i+'_'+j+'_'+k);
+                }
+                $("#custom_monster_variable_"+m+"_"+i+"_"+j+"_0").val(json["custom_monster_condition"][j][k]["name"]);
+                $("#custom_get_monster_variable_"+m+"_"+i+"_"+j+"_"+p).val(json["custom_monster_condition"][j][k]["num"]);
+                $("#custom_get_monster_variable_equal_"+m+"_"+i+"_"+j+"_"+k).val(json["custom_monster_condition"][j][k]["operator"]);
+                $("#custom_monster_variable_and_or_"+m+"_"+i+"_"+j+"_"+k).val();
+            }
+         }
+            $("#as_"+id+"_"+m).val(json["as_monster_condition"]);
+        $("#min_equation_number_"+String(m)).val(val["monster"][m]["min_equation_number"]);
+        $("#max_equation_number_"+String(m)).val(val["monster"][m]["max_equation_number"]);
+        tmp["equation"] = {};
+        $("#get_equation_det_"+m).val(val["monster"][m]["equation"]["equation"]);
+        $("#get_equation_kind_"+m).val(val["monster"][m]["equation"]["equation_kind"]);
+        $("#get_equation_number_"+m).val(val["monster"][m]["equation"]["equation_number"]);
+        $("#"+id+"_and_or_"+m).val(val["monster"][m]["and_or"]);
+        $("#exclude_"+m).val(val["exclude"]);
+        for(var field_x =0;val["field_x"][field_x] != undefined;field_x++){
+            $("#"+id+"_field_x_"+m+"_"+field_x).val(val["field_x"][field_x]);
+            $("#get_field_x_det_"+m+"_"+field_x).val(val["field_x_operator"][field_x]);
+            $("#get_field_x_and_or_"+m+"_"+field_x).val(val["field_x_and_or"][field_x]);
+        }
+        for(var field_y =0;val["field_y"][field_y] != undefined;field_y++){
+            $("#"+id+"_field_y_"+m+"_"+field_y).val(val["field_y"][field_y]);
+            $("#get_field_y_det_"+m+"_"+field_y).val(val["field_y_operator"][field_y]);
+            $("#get_field_y_and_or_"+m+"_"+field_y).val(val["field_y_and_or"][field_y]);
+        }
     }
     function putCondition(){
         var id = "trigger_condition";

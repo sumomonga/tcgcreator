@@ -38,8 +38,9 @@ CHAIN = (
     (1,"以下"),
     (2,"ちょうど"),
 )
+
 class Timing(models.Model):
-    next_timing = models.ForeignKey("Timing",default=None,blank=True,null=True)
+    next_timing = models.ForeignKey("Timing",default=None,blank=True,null=True,on_delete=models.SET_NULL)
     timing_name= models.CharField(max_length=32,blank=True)
     timing_auto = models.BooleanField(default=False)
     def __str__(self):
@@ -47,19 +48,19 @@ class Timing(models.Model):
 class TriggerTiming(models.Model):
     def __str__(self):
         return self.trigger_timing_name
-    trigger = models.ForeignKey('Trigger',default=None,null=True,blank=True);
+    trigger = models.ForeignKey('Trigger',default=None,null=True,blank=True,on_delete=models.SET_NULL);
     kinds = models.CharField(max_length=32,blank=True)
     from_place_kind = models.IntegerField(choices = PLACE_KIND,default = 0);
-    from_deck = models.ForeignKey("Deck",default =None,null=True,related_name='from_deck',blank=True)
-    from_grave = models.ForeignKey("Grave",default = None,null=True,related_name='from_grave',blank=True)
-    from_hand = models.ForeignKey("Hand",default=None,null=True,related_name='from_hand',blank=True)
-    from_field = models.ForeignKey("FieldKind",default=None,null=True,related_name='from_field_kind',blank=True)
+    from_deck = models.ForeignKey("Deck",default =None,null=True,related_name='from_deck',blank=True,on_delete=models.SET_NULL)
+    from_grave = models.ForeignKey("Grave",default = None,null=True,related_name='from_grave',blank=True,on_delete=models.SET_NULL)
+    from_hand = models.ForeignKey("Hand",default=None,null=True,related_name='from_hand',blank=True,on_delete=models.SET_NULL)
+    from_field = models.ForeignKey("FieldKind",default=None,null=True,related_name='from_field_kind',blank=True,on_delete=models.SET_NULL)
     from_mine_or_other = models.IntegerField(choices = MINE_OR_OTHER3)
     to_place_kind = models.IntegerField(choices = PLACE_KIND,default = 0);
-    to_deck = models.ForeignKey("Deck",default =None,null=True,related_name ="to_deck",blank=True)
-    to_grave = models.ForeignKey("Grave",default = None,null=True,related_name ="to_grave",blank=True)
-    to_hand = models.ForeignKey("Hand",default=None,null=True,related_name ="to_hand",blank=True)
-    to_field = models.ForeignKey("FieldKind",default=None,null=True,related_name='to_field_kind',blank=True)
+    to_deck = models.ForeignKey("Deck",default =None,null=True,related_name ="to_deck",blank=True,on_delete=models.SET_NULL)
+    to_grave = models.ForeignKey("Grave",default = None,null=True,related_name ="to_grave",blank=True,on_delete=models.SET_NULL)
+    to_hand = models.ForeignKey("Hand",default=None,null=True,related_name ="to_hand",blank=True,on_delete=models.SET_NULL)
+    to_field = models.ForeignKey("FieldKind",default=None,null=True,related_name='to_field_kind',blank=True,on_delete=models.SET_NULL)
     to_mine_or_other = models.IntegerField(choices = MINE_OR_OTHER3)
     monster = models.ManyToManyField("Monster")
     who =  models.IntegerField(choices=TRIGGER_WHO,default=0)
@@ -70,20 +71,20 @@ class Trigger(models.Model):
     mine_or_other = models.IntegerField(choices=MINE_OR_OTHER,default=1)
     priority = models.IntegerField(default="100")
     turn = models.IntegerField(choices=MINE_OR_OTHER)
-    phase = models.ForeignKey('Phase',default=None,blank=True,null=True)
+    phase = models.ForeignKey('Phase',default=None,blank=True,null=True,on_delete=models.SET_NULL)
     chain = models.IntegerField(default=0,blank=True)
     chain_kind = models.IntegerField(default=0,blank=True,choices = CHAIN)
     force = models.BooleanField(default=False)
-    pac = models.ForeignKey('PacWrapper',default=None,blank=True,null=True)
-    next_effect = models.ForeignKey('MonsterEffectWrapper',default=None,blank=True,null=True)
+    pac = models.ForeignKey('PacWrapper',default=None,blank=True,null=True,on_delete=models.SET_NULL)
+    next_effect = models.ForeignKey('MonsterEffectWrapper',default=None,blank=True,null=True,on_delete=models.SET_NULL)
     trigger_condition = models.TextField(default="",blank=True)
     trigger_timing = models.BooleanField(default=False,blank=True)
     trigger_monster = models.TextField(default=None,null=True,blank=True)
     trigger_none_monster = models.BooleanField(default=False)
     trigger_name = models.CharField(max_length=32,default=None,null=True,blank=True)
     trigger_sentence = models.CharField(max_length=32,default=None,null=True,blank=True)
-    trigger_cost = models.ForeignKey('CostWrapper',default=None,null=True,blank=True)
-    trigger_cost_pac = models.ForeignKey('PacCostWrapper',default=None,blank=True,null=True)
+    trigger_cost = models.ForeignKey('CostWrapper',default=None,null=True,blank=True,on_delete=models.SET_NULL)
+    trigger_cost_pac = models.ForeignKey('PacCostWrapper',default=None,blank=True,null=True,on_delete=models.SET_NULL)
     trigger_kind = models.CharField(max_length=32,default="",blank=True)
     timing = models.ManyToManyField(Timing,default=None,blank = True,null=True)
     none_timing = models.BooleanField(default=False)
@@ -194,26 +195,26 @@ class Deck(models.Model):
         return self.deck_name
 
 class UserDeckGroup(models.Model):
-    user= models.ForeignKey(User);
+    user= models.ForeignKey(User,null=True,on_delete=models.SET_NULL);
     deck_name=models.TextField(default="デッキ")
     user_deck_id  = models.IntegerField();
 class DefaultDeckGroup(models.Model):
     deck_name=models.TextField(default="デッキ")
     default_deck_id  = models.IntegerField();
 class UserDeck(models.Model):
-    user= models.ForeignKey(User);
-    deck_type = models.ForeignKey(Deck);
-    deck_group = models.ForeignKey(UserDeckGroup);
+    user= models.ForeignKey(User,null=True,on_delete=models.SET_NULL);
+    deck_type = models.ForeignKey(Deck,null=True,on_delete=models.SET_NULL);
+    deck_group = models.ForeignKey(UserDeckGroup,null=True,on_delete=models.SET_NULL);
     deck=models.TextField()
 class DefaultDeck(models.Model):
     deck=models.TextField()
-    deck_type = models.ForeignKey(Deck);
-    deck_group = models.ForeignKey(DefaultDeckGroup,default="1");
+    deck_type = models.ForeignKey(Deck,null=True,on_delete=models.SET_NULL);
+    deck_group = models.ForeignKey(DefaultDeckGroup,default="1",null=True,on_delete=models.SET_NULL);
 class DefaultDeckChoice(models.Model):
-    default_deck  = models.ForeignKey(DefaultDeckGroup,default="1");
+    default_deck  = models.ForeignKey(DefaultDeckGroup,default="1",null=True,on_delete=models.SET_NULL);
 class UserDeckChoice(models.Model):
-    user = models.OneToOneField(User);
-    user_deck  = models.ForeignKey(UserDeckGroup);
+    user = models.OneToOneField(User,on_delete=models.SET_NULL,null=True);
+    user_deck  = models.ForeignKey(UserDeckGroup,null=True,on_delete=models.SET_NULL);
 class Grave(models.Model):
     mine_or_other = models.IntegerField(choices=MINE_OR_OTHER2)
     show = models.IntegerField(default=0,choices=SHOW)
@@ -249,6 +250,7 @@ class MonsterVariables(models.Model):
     monster_variable_label = models.CharField(max_length=32)
     monster_variable_kind_id = models.ForeignKey(MonsterVariablesKind,related_name='monster_variable_kind_id',on_delete = models.CASCADE)
     monster_variable_show = models.IntegerField(default = 0)
+    monster_variable_show2 = models.IntegerField(default = 0)
     priority = models.IntegerField()
     default_value = models.CharField(max_length=32)
     def __str__(self):
@@ -307,10 +309,10 @@ class MonsterEffect(models.Model):
     def __str__(self):
         return self.monster_effect_name
 class PacCostWrapper(models.Model):
-    cost_next = models.ForeignKey('CostWrapper',related_name = '%(class)s_cost_next',null=True,blank=True)
-    cost_next2 = models.ForeignKey('CostWrapper',related_name='%(class)s_cost_next2',null=True,blank=True)
-    pac_next = models.ForeignKey('PacCostWrapper',related_name  = '%(class)s_pac_cost_next',null=True,blank=True,default=None)
-    pac_next2 = models.ForeignKey('PacCostWrapper',related_name  = '%(class)s_pac_cost_next2',null=True,blank=True,default=None)
+    cost_next = models.ForeignKey('CostWrapper',related_name = '%(class)s_cost_next',null=True,blank=True,on_delete=models.SET_NULL)
+    cost_next2 = models.ForeignKey('CostWrapper',related_name='%(class)s_cost_next2',null=True,blank=True,on_delete=models.SET_NULL)
+    pac_next = models.ForeignKey('PacCostWrapper',related_name  = '%(class)s_pac_cost_next',null=True,blank=True,default=None,on_delete=models.SET_NULL)
+    pac_next2 = models.ForeignKey('PacCostWrapper',related_name  = '%(class)s_pac_cost_next2',null=True,blank=True,default=None,on_delete=models.SET_NULL)
     monster_effect_kind = models.CharField(max_length=32,blank=True)
     pac_cost= models.ForeignKey('PacCost',related_name='PacCost',on_delete = models.CASCADE)
     pac_cost_name = models.CharField(default="",max_length=32)
@@ -318,15 +320,15 @@ class PacCostWrapper(models.Model):
     def __str__(self):
         return self.pac_cost_name
 class PacCost(models.Model):
-    pac_cost_next = models.ForeignKey('CostWrapper',null=True,blank=True,related_name='%(class)s_pac_cost_next')
+    pac_cost_next = models.ForeignKey('CostWrapper',null=True,blank=True,related_name='%(class)s_pac_cost_next',on_delete=models.SET_NULL)
     pac_cost_name = models.CharField(default="",max_length=32)
     def __str__(self):
         return self.pac_cost_name
 class PacWrapper(models.Model):
-    monster_effect_next = models.ForeignKey('MonsterEffectWrapper',related_name = '%(class)s_monster_effect_next',null=True,blank=True)
-    monster_effect_next2 = models.ForeignKey('MonsterEffectWrapper',related_name='%(class)s_monster_effect_next2',null=True,blank=True)
-    pac_next = models.ForeignKey('PacWrapper',related_name  = '%(class)s_pac_cost_next',null=True,blank=True,default=None)
-    pac_next2 = models.ForeignKey('PacWrapper',related_name  = '%(class)s_pac_cost_next2',null=True,blank=True,default=None)
+    monster_effect_next = models.ForeignKey('MonsterEffectWrapper',related_name = '%(class)s_monster_effect_next',null=True,blank=True,on_delete=models.SET_NULL)
+    monster_effect_next2 = models.ForeignKey('MonsterEffectWrapper',related_name='%(class)s_monster_effect_next2',null=True,blank=True,on_delete=models.SET_NULL)
+    pac_next = models.ForeignKey('PacWrapper',related_name  = '%(class)s_pac_cost_next',null=True,blank=True,default=None,on_delete=models.SET_NULL)
+    pac_next2 = models.ForeignKey('PacWrapper',related_name  = '%(class)s_pac_cost_next2',null=True,blank=True,default=None,on_delete=models.SET_NULL)
     monster_effect_kind = models.CharField(max_length=32,blank=True)
     pac= models.ForeignKey('Pac',related_name='Pac',on_delete = models.CASCADE)
     pac_name = models.CharField(default="",max_length=32)
@@ -334,7 +336,7 @@ class PacWrapper(models.Model):
     def __str__(self):
         return self.pac_name
 class Pac(models.Model):
-    pac_next = models.ForeignKey('MonsterEffectWrapper',null=True,blank=True,related_name='%(class)s_pac_next')
+    pac_next = models.ForeignKey('MonsterEffectWrapper',null=True,blank=True,related_name='%(class)s_pac_next',on_delete=models.SET_NULL)
     pac_name = models.CharField(default="",max_length=32)
     def __str__(self):
         return self.pac_name
@@ -342,8 +344,8 @@ class EternalWrapper(models.Model):
     priority = models.IntegerField(default="100")
     monster_effect= models.ForeignKey(MonsterEffect,related_name='eternal_wrapper',on_delete = models.CASCADE)
     monster_effect_kind = models.CharField(max_length=32,blank=True)
-    monster_effect_next = models.ForeignKey('self',null=True,blank=True)
-    monster_effect_next2= models.ForeignKey('self',related_name='%(class)s_monster_effect_next2',default=None,null=True,blank=True);
+    monster_effect_next = models.ForeignKey('self',null=True,blank=True,on_delete=models.SET_NULL)
+    monster_effect_next2= models.ForeignKey('self',related_name='%(class)s_monster_effect_next2',default=None,null=True,blank=True,on_delete=models.SET_NULL);
     monster_effect_name = models.CharField(default="",max_length=32)
     log = models.TextField(default="",blank=True)
     none_timing = models.BooleanField(default=False,blank=True)
@@ -352,10 +354,10 @@ class EternalWrapper(models.Model):
 class MonsterEffectWrapper(models.Model):
     monster_effect= models.ForeignKey(MonsterEffect,related_name='monster_effect_wrapper',on_delete = models.CASCADE)
     monster_effect_kind = models.CharField(max_length=32,blank=True)
-    monster_effect_next = models.ForeignKey('self',null=True,blank=True)
-    monster_effect_next2= models.ForeignKey('self',related_name='%(class)s_monster_effect_next2',default=None,null=True,blank=True);
-    pac = models.ForeignKey(PacWrapper,null=True,blank=True,related_name = '%(class)s_pac')
-    pac2= models.ForeignKey(PacWrapper,related_name='%(class)s_pac2',default=None,null=True,blank=True);
+    monster_effect_next = models.ForeignKey('self',null=True,blank=True,on_delete=models.SET_NULL)
+    monster_effect_next2= models.ForeignKey('self',related_name='%(class)s_monster_effect_next2',default=None,null=True,blank=True,on_delete=models.SET_NULL);
+    pac = models.ForeignKey(PacWrapper,null=True,blank=True,related_name = '%(class)s_pac',on_delete=models.SET_NULL)
+    pac2= models.ForeignKey(PacWrapper,related_name='%(class)s_pac2',default=None,null=True,blank=True,on_delete=models.SET_NULL);
     monster_effect_name = models.CharField(default="",max_length=32)
     log = models.TextField(default="",blank=True)
     def __str__(self):
@@ -367,7 +369,7 @@ class EternalEffect(models.Model):
     turn = models.IntegerField(choices=MINE_OR_OTHER)
     chain = models.IntegerField(default=0,blank=True,null=True)
     chain_kind = models.IntegerField(default=0,blank=True,choices = CHAIN)
-    phase = models.ForeignKey('Phase',default=None,blank=True,null=True)
+    phase = models.ForeignKey('Phase',default=None,blank=True,null=True,on_delete=models.SET_NULL)
     mine_or_other = models.IntegerField(choices = MINE_OR_OTHER,default=0)
     eternal_effect_condition = models.TextField(default="",blank=True)
     eternal_effect = models.TextField(default="",blank=True)
@@ -385,6 +387,7 @@ class EternalEffect(models.Model):
     timing = models.ManyToManyField(Timing,default=None,blank = True,null=True)
     none_timing = models.BooleanField(default=False)
     none_monster = models.BooleanField(default=False)
+    invalid_none_monster = models.BooleanField(default=False)
     persist = models.BooleanField(default=False)
     def __str__(self):
         return self.eternal_name
@@ -400,10 +403,10 @@ class Cost(models.Model):
 class CostWrapper(models.Model):
     cost= models.ForeignKey(Cost,related_name='cost_wrapper',on_delete = models.CASCADE)
     cost_kind = models.CharField(max_length=32,blank=True,default="")
-    cost_next = models.ForeignKey('self',null=True,blank=True)
-    cost_next2= models.ForeignKey('self',related_name='%(class)s_cost_next2',default=None,null=True,blank=True);
-    pac = models.ForeignKey('PacCostWrapper',null=True,blank=True,related_name = '%(class)s_pac')
-    pac2= models.ForeignKey('PacCostWrapper',related_name='%(class)s_pac2',default=None,null=True,blank=True);
+    cost_next = models.ForeignKey('self',null=True,blank=True,on_delete=models.SET_NULL)
+    cost_next2= models.ForeignKey('self',related_name='%(class)s_cost_next2',default=None,null=True,blank=True,on_delete=models.SET_NULL);
+    pac = models.ForeignKey('PacCostWrapper',null=True,blank=True,related_name = '%(class)s_pac',on_delete=models.SET_NULL)
+    pac2= models.ForeignKey('PacCostWrapper',related_name='%(class)s_pac2',default=None,null=True,blank=True,on_delete=models.SET_NULL);
     cost_name = models.CharField(default="",max_length=32)
     log = models.TextField(default="",blank=True)
     def __str__(self):
@@ -419,10 +422,10 @@ class Duel(models.Model):
     ask_det = models.TextField(default="");
     answer = models.TextField(default="");
     user_turn = models.IntegerField(default=0)
-    phase = models.ForeignKey(Phase,default=None,blank=True,null=True)
+    phase = models.ForeignKey(Phase,default=None,blank=True,null=True,on_delete=models.SET_NULL)
     global_variable = models.TextField(default="",blank=True)
-    user_1= models.ForeignKey(User,blank=True,related_name='%(class)s_requests_user_1',default=None,null=True);
-    user_2= models.ForeignKey(User,default=None,blank=True,null=True);
+    user_1= models.ForeignKey(User,blank=True,related_name='%(class)s_requests_user_1',default=None,null=True,on_delete=models.SET_NULL);
+    user_2= models.ForeignKey(User,default=None,blank=True,null=True,on_delete=models.SET_NULL);
     chain = models.IntegerField(default=0,blank=True,null=False)
     chain_det = models.TextField(default="",blank=True)
     chain_user = models.TextField(default="",blank=True)
@@ -435,19 +438,19 @@ class Duel(models.Model):
     cost_user = models.IntegerField(default=0,blank=True)
     trigger_waiting = models.TextField(default="",blank=True)
     appoint = models.IntegerField(default=0,blank=True)
-    timing = models.ForeignKey(Timing,default=None,blank=True,null = True)
-    timing_waiting = models.ForeignKey(Trigger,default=None,blank=True,null = True)
+    timing = models.ForeignKey(Timing,default=None,blank=True,null = True,on_delete=models.SET_NULL)
+    timing_waiting = models.ForeignKey(Trigger,default=None,blank=True,null = True,on_delete=models.SET_NULL)
     timing_mess = models.TextField(default="")
     current_priority = models.IntegerField(default=10000)
     pac = models.IntegerField(default=0,blank=True,null=False)
     in_pac = models.TextField(default="",blank = True)
     in_pac_cost = models.TextField(default="",blank = True)
     no_invoke_eternal_effect = models.TextField(default="",blank = True)
-    #invoke_invalid_eternal_effect = models.TextField(default="",blank = True)
-    #no_choose_eternal_effect = models.TextField(default="",blank = True)
-    #no_eternal_eternal_effect = models.TextField(default="",blank = True)
-    #not_effected_eternal_effect = models.TextField(default="",blank = True)
-    #change_val_eternal_effect = models.TextField(default="",blank = True)
+    invoke_invalid_eternal_effect = models.TextField(default="",blank = True)
+    no_choose_eternal_effect = models.TextField(default="",blank = True)
+    no_eternal_eternal_effect = models.TextField(default="",blank = True)
+    not_effected_eternal_effect = models.TextField(default="",blank = True)
+    change_val_eternal_effect = models.TextField(default="",blank = True)
     audio = models.CharField(max_length=32,default="",blank=True)
     log = models.TextField(default="",blank=True)
     log_turn = models.TextField(default="",blank=True)
@@ -468,9 +471,10 @@ class Config(models.Model):
     game_name = models.CharField(max_length=32,default="")
     hide_name = models.CharField(max_length=32,default="")
     limit_time = models.IntegerField(default=300)
+    room_time = models.IntegerField(default=180)
     time_win = models.CharField(default="",blank=True,max_length=32)
     beep = models.BooleanField(default=False)
     common_name = models.CharField(default="共有",max_length=32)
-    gray_out = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True)
-    default_sort = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True,related_name="default_sort")
+    gray_out = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True,on_delete=models.SET_NULL)
+    default_sort = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True,related_name="default_sort",on_delete=models.SET_NULL)
 

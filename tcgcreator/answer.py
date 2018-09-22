@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.db.models import Q
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
@@ -54,7 +54,7 @@ def cancel(request):
     duelobj = DuelObj(room_number)
     duelobj.duel = duel;
     duelobj.room_number = room_number;
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     if(duel.user_1 == request.user):
         user = 1
@@ -82,7 +82,7 @@ def none(request):
     duelobj = DuelObj(room_number)
     duelobj.duel = duel;
     duelobj.room_number = room_number;
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     if(duel.user_1 == request.user):
         user = 1
@@ -160,7 +160,7 @@ def answer(request):
     room_number =int(request.POST["room_number"])
     duelobj = DuelObj(room_number)
     check_array =[]
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).get()
     if(duel.user_1 != request.user and duel.user_2 != request.user):
@@ -217,7 +217,7 @@ def answer(request):
     return HttpResponse("error")
 def yes_or_no(request):
     room_number =int(request.POST["room_number"])
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).get()
     duelobj = DuelObj(room_number)
@@ -657,22 +657,23 @@ def answer_det(duelobj,duel,user,answer_json,request,ask_org):
         else:
             tmp_count = 0
             place_id = answer_val["place_unique_id"]
-            mine_or_other = answer_val["mine_or_other"]
+            mine_or_other = int(answer_val["mine_or_other"])
+           
             if user == 1:
-                if mine_or_other == '1':
+                if mine_or_other == 1:
                     mine_or_other = 1
                     mine_or_other_org = 1
-                elif mine_or_other == '2':
+                elif mine_or_other == 2:
                     mine_or_other = 2
                     mine_or_other_org =2
                 else:
                     mine_or_other = 3
                     mine_or_other_org =3
             else:
-                if mine_or_other == '1':
+                if mine_or_other == 1:
                     mine_or_other = 2
                     mine_or_other_org =1
-                elif mine_or_other == '2':
+                elif mine_or_other == 2:
                     mine_or_other = 1
                     mine_or_other_org =2
                 else:
@@ -688,11 +689,11 @@ def answer_det(duelobj,duel,user,answer_json,request,ask_org):
                             current_place_and_or = place["and_or"]
                             place_tmp = place["det"].split("_")
                             if(place_tmp[0] == "deck"):
-                                deck_id = answer_val["deck_id"]
+                                deck_id = int(answer_val["deck_id"])
                             elif(place_tmp[0] == "grave"):
-                                deck_id = answer_val["grave_id"]
+                                deck_id = int(answer_val["grave_id"])
                             elif(place_tmp[0] == "hand"):
-                                deck_id = answer_val["hand_id"]
+                                deck_id = int(answer_val["hand_id"])
 
                             if(place_tmp[0] == place_for_answer ):
                                 if(place_tmp[0] == "deck" and deck_id == int(place_tmp[1])):

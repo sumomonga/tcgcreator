@@ -9,6 +9,8 @@ def monsteritem(id):
 	monsteritems = MonsterItem.objects.all().filter(monster_id__id = id).order_by('-monster_variables_id__priority').select_related('monster_variables_id').select_related('monster_variables_id__monster_variable_kind_id')
 	result_array = []
 	for monsteritem in monsteritems:
+		if monsteritem.monster_variables_id.monster_variable_show2 == 0:
+			continue
 		tmp = {}
 		tmp["priority"] = monsteritem.monster_variables_id.priority
 		if(monsteritem.monster_variables_id.monster_variable_kind_id.id <2):
@@ -100,6 +102,8 @@ def get_user_deck(user_deck,arg):
 '''.format(monster_id=monster.id,monster_name=escape(monster.monster_name),arg=arg.id)
 		for monster_item in monster_items:
 				
+			if monster_item.monster_variables_id.monster_variable_show2 == 0:
+				continue
 			if monster_item.monster_variables_id.monster_variable_kind_id.id < 2:
 				show = escape(monster_item.monster_item_text)
 			else:

@@ -168,7 +168,7 @@ selected
 {% for check in monster.monster_deck|split2 %}
 <input type="checkbox" value="{{monster.id}}" name="monster_deck_{{check}}">
 {% endfor %}
-<a target="_blank"  title="" href="explain.php?id={{monster.id}}">{{monster.monster_name}}{{monster.id|monsteritem}}</a><span style="color:red"></span><br></li>
+<a target="_blank"  title="" href="{% url 'explain' %}?id={{monster.id}}">{{monster.monster_name}}{{monster.id|monsteritem}}</a><span style="color:red"></span><br></li>
 {% endfor %}
 </ul>
 <input type="submit" value="実行">
@@ -186,6 +186,17 @@ selected
 </td>
 </tr></table>
 </form>
+<!-- 
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7991794779543930"
+     data-ad-slot="9741990400"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+-->
 </body>
 </html>
 

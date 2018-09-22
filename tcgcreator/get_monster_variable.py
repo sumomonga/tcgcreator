@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField

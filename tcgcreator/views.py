@@ -1,13 +1,13 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse,HttpResponseRedirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.template.response import TemplateResponse
 from django.db.models.functions import Cast
 from django.db.models import IntegerField
 from django.views.generic import View
 from tcgcreator.models import MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,FieldKind,MonsterEffectKind,FieldSize,Field,Deck,Grave,Hand,FieldKind,Phase,UserDeck,UserDeckGroup,Duel,UserDeckChoice,GlobalVariable,DuelDeck,DuelGrave,DuelHand,DefaultDeckGroup,DefaultDeckChoice,DefaultDeck,Trigger,Timing,Pac,Config
-from .forms import EditMonsterVariablesForm,EditMonsterForm,EditMonsterItemForm,UserForm
+from .forms import EditMonsterVariablesForm,EditMonsterForm,EditMonsterItemForm,UserForm,profileForm
 from .forms import EditMonsterVariablesKindForm,forms
 from .custom_functions  import init_monster_item,create_user_deck,create_user_deck_group,copy_to_deck,create_user_deck_choice,create_default_deck,create_default_deck_group,copy_to_default_deck,create_default_deck_choice
 from django.contrib.auth import login, authenticate
@@ -941,7 +941,7 @@ def init_battle2(request):
 def init_battle3(request):
     return init_battle(request,3)
 def init_battle(request,room_number):
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponse("Please Login")
     duel = Duel.objects.filter(id=room_number).first();
     if duel.waiting == True and duel.user_2 != None:
@@ -1006,11 +1006,13 @@ def send_lose(request):
         duel.log += request.user.first_name+"は降参した"
         duel.log_turn += request.user.first_name+"は降参した"
         duel.winner = 2
+        duel.end_time = time()
         duel.save()
     if duel.user_2 == request.user:
         duel.log += request.user.first_name+"は降参した"
         duel.log_turn += request.user.first_name+"は降参した"
         duel.winner = 1
+        duel.end_time = time()
         duel.save()
     return HttpResponse("")
 
@@ -1028,7 +1030,11 @@ def wait_battle2(request):
 def wait_battle3(request):
     return wait_battle(request,3)
 def wait_battle(request,room_number):
-    return render(request,'tcgcreator/wait_battle.html',{'room_number':room_number})
+    duel = Duel.objects.filter(id=room_number).first()
+    if request.user == duel.user_1 and duel.waiting == True:
+	    return render(request,'tcgcreator/wait_battle.html',{'room_number':room_number})
+    else:
+        return HttpResponseRedirect(reverse('choose'))
 def leave_battle(request,room_number):
     duel = Duel.objects.filter(id=room_number).first()
     if duel.waiting == True and duel.user_1 == request.user:
@@ -1144,7 +1150,7 @@ def makedeck(req):
     where_sql = "";
     join_sql = "";
     add_variable =[]
-    if not req.user.is_authenticated():
+    if not req.user.is_authenticated:
         return HttpResponse("Please Login")
     deck_group = UserDeckChoice.objects.filter(user = req.user).first()
     if not deck_group:
@@ -1253,7 +1259,7 @@ def get_monster_deck_type(req):
     decks = Deck.objects.all();
     result = '<select id="monster_deck_text_'+num+'" name="monster_item_text_'+num+'" onchange="changeDeckNum()">'
     for deck in decks:
-        result += '<option value="' + str(deck.id)+ '">'+deck.deck_name+'</option>'
+        result += '<option value="' + str(deck.id)+ '">'+d/ck.deck_name+'</option>'
     result+= "</select>"
     return HttpResponse(result)
 
@@ -1295,6 +1301,7 @@ def choose(request):
         watch_3 = 1
     config = Config.objects.get()
     limit_time = config.limit_time
+    room_time = config.room_time
     room_text1 = ""
     room_text2 = ""
     room_text3 = ""
@@ -1318,11 +1325,12 @@ def choose(request):
         room_text3 += duel_3.user_2.first_name+ "の勝利\n"
     if duel_1.waiting == True:
         wait_kind1 = 0
-    elif duel_1.winner != 0 and time() - duel_1.end_time > limit_time:
+    elif duel_1.winner != 0 and time() - duel_1.end_time > room_time:
         duel_1.waiting = True
         duel_1.save()
         wait_kind1  = 0
     elif duel_1.winner != 0:
+        room_text1 += str(int(room_time-(time()-duel_1.end_time))) +"後に開放"
         wait_kind1 = 1
     elif duel_1.winner == 0 and time() - duel_1.time_1 > limit_time * 2:
         duel_1.waiting = True
@@ -1336,11 +1344,12 @@ def choose(request):
         wait_kind1 = 1
     if duel_2.waiting == True:
         wait_kind2 = 0
-    elif duel_2.winner != 0 and time() - duel_2.end_time > limit_time:
+    elif duel_2.winner != 0 and time() - duel_2.end_time > room_time:
         duel_2.waiting = True
         duel_2.save()
         wait_kind2 =  0
     elif duel_2.winner != 0:
+        room_text2 += str(int(room_time-(time()-duel_2.end_time))) +"後に開放"
         wait_kind2 = 1
     elif duel_2.winner == 0 and time() - duel_2.time_1 > limit_time * 2:
         duel_2.waiting = True
@@ -1353,16 +1362,17 @@ def choose(request):
         wait_kind2 = 1
     if duel_3.waiting == True:
         wait_kind3 = 0
-    elif duel_3.winner != 0 and time() - duel_3.end_time > limit_time:
+    elif duel_3.winner != 0 and time() - duel_3.end_time > room_time:
         duel_3.waiting = True
         duel_3.save()
-        wait_kind3 = 1
-    elif duel_3.winner != 0:
         wait_kind3 = 0
+    elif duel_3.winner != 0:
+        room_text3 += str(int(room_time-(time()-duel_3.end_time))) +"後に開放"
+        wait_kind3 = 1
     elif duel_3.winner == 0 and time() - duel_3.time_1 > limit_time * 2:
         duel_3.waiting = True
         duel_3.save()
-        wait_kind3  = 1
+        wait_kind3  =0
     elif duel_3.winner == 0:
         room_text3 += "対戦中"+duel_3.user_1.first_name+"対"+duel_3.user_2.first_name
         if request.user == duel_3.user_1 or request.user == duel_3.user_2:
@@ -1383,13 +1393,26 @@ def get_tcg_timing(req):
         return_html += '<option value="'+str(timing.id)+'">'+timing.timing_name+'</option>'
     return HttpResponse(return_html)
 def index(request):
-    return render(request, 'tcgcreator/index.html')
+    if request.user.is_authenticated:
+        user_flag = True
+    else:
+        user_flag = False
+    return render(request, 'tcgcreator/index.html',{"user_flag":user_flag})
 def howto(request):
     return render(request, 'tcgcreator/howto.html')
+def user_info_change(request):
+    if request.method == 'POST':
+        form = profileForm(request.POST,instance=request.user)
+        if form.is_valid() :
+            form.save()
+       	    return redirect('index')
+    else:
+        form = profileForm()
+        return render(request, 'tcgcreator/user_info_change.html', {'form': form})
 def signup(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
-        if form.is_valid():
+        if form.is_valid() and  request.POST["first_name"]:
             form.save()
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password1')

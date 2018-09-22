@@ -524,9 +524,13 @@ success: function(data){
 	MakeChoices(data);
 	MakeNone(data);
 	WriteLog(data);
+	if(data["winner"] == true){
+		$("#back").show();
+		$("#choices").html("");
+    }
+
 	if(data["ask"] != false){
 		ask();
-
 	}else if(data["ask_org"] == true ){
 	    setTimeout(Wait,5000);
 	}else if(data["appoint"] == false ){
@@ -1184,7 +1188,6 @@ success: function(data){
 <div class = "control">
 <div id="timer"></div>
     <div style="text-align:center">
-        <a id="back" style="display:none" target="_blank" href="choose.php">戻る</a>
         {% if room_number == 1 %}
         <a target="_blank" href="{% url 'watch1'  %}">これまでのデュエル内容を確認</a>
         {% elif room_number == 2 %}
@@ -1194,9 +1197,21 @@ success: function(data){
         {% endif %}
     </divs>
 <div style="text-align:center">メッセージ送信<input type="text" id="tomessage"><input type="button" onclick="SendMessage();" value="メッセージ送信"></div>
-<div style="text-align:center;margin-bottom:10px"><input type="button" onclick="GetResponse();" value="更新"></div>
+<div style="text-align:center;margin-bottom:10px"><input type="button" onclick="Wait();" value="更新"></div>
+<div id="back" style="text-align:center;display:none"><a href="{% url 'choose' %}">戻る</a></div>
 </div>
 <div style="border:1px solid #000;text-align:center;height:30px;overflow-y:scroll" id="message2" ></div>
+<!-- 
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7991794779543930"
+     data-ad-slot="9741990400"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+-->
 
 </body>
 </html>

@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import include,url
 from django.contrib import admin
-from django.contrib.auth.views import login, logout_then_login,logout
+from django.contrib.auth.views import LoginView, logout_then_login,LogoutView
 from tcgcreator import views
 
 urlpatterns = [
@@ -25,9 +25,9 @@ urlpatterns = [
     url(r'^admin/tcgcreator/defaultdeck/$',views.default_deck,name='defaultdeck'),
     url(r'^admin/', admin.site.urls),
     url(r'^tcgcreator/', include('tcgcreator.urls')),
-    url(r'^gameuser/', include('gameuser.urls',namespace="gameuser")),
-    url(r'^login/$', login, name='login'),
-    url(r'^logout/$', logout, name='logout'),
+    url(r'^gameuser/', include('gameuser.urls')),
+    url(r'^login/$', LoginView.as_view(), name='login'),
+    url(r'^logout/$', LogoutView.as_view(), name='logout'),
 
 	
 ]
