@@ -1,4 +1,4 @@
-from .models import Config,MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,Field,UserDeck,UserDeckGroup,Deck,UserDeck,UserDeckGroup,UserDeckChoice,Duel,Phase,Trigger,Grave,Hand,MonsterEffect,MonsterEffectWrapper,GlobalVariable,Cost,CostWrapper,DuelDeck,DuelGrave,DuelHand,FieldSize,TriggerTiming,Timing,Pac,PacWrapper,PacCost,PacCostWrapper,EternalEffect,VirtualVariable,EternalWrapper,Flag
+from .models import Config,MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,Field,UserDeck,UserDeckGroup,Deck,UserDeck,UserDeckGroup,UserDeckChoice,Duel,Phase,Trigger,Grave,Hand,MonsterEffect,MonsterEffectWrapper,GlobalVariable,Cost,CostWrapper,DuelDeck,DuelGrave,DuelHand,FieldSize,TriggerTiming,Timing,Pac,PacWrapper,PacCost,PacCostWrapper,EternalEffect,VirtualVariable,EternalWrapper,Flag,EternalTrigger
 from django.http import HttpResponse,HttpResponseRedirect
 from .custom_functions  import init_monster_item,create_user_deck,create_user_deck_group,copy_to_deck,create_user_deck_choice,create_user_deck_det
 from django.db.models import Q
@@ -1311,6 +1311,8 @@ class DuelObj:
         duel = self.duel
         if duel.in_cost == True:
             user = duel.cost_user
+        elif duel.chain==0 or duel.ask>0:
+            user = self.user
         else:
             chain_user = json.loads(duel.chain_user)
             user = chain_user[str(duel.chain-1)]
@@ -1323,17 +1325,17 @@ class DuelObj:
             if variable_name in variable:
                 return  int(variable[variable_name]["value"])
             else:
-                return  int(self.virtual_variable[variable_name]["value"])
+                return  int(self.virtual_variables[variable_name]["value"])
         if (mine_or_other == 1 and user == 1) or (mine_or_other == 2 and user == 2):
             if variable_name in variable:
                 return  int(variable[variable_name]["1_value"])
             else:
-                return  int(self.virtual_variable[variable_name]["1_value"])
+                return  int(self.virtual_variables[variable_name]["1_value"])
         if (mine_or_other == 2 and user == 1) or (mine_or_other == 1 and user == 2):
             if variable_name in variable:
                 return  int(variable[variable_name]["2_value"])
             else:
-                return  int(self.virtual_variable[variable_name]["2_value"])
+                return  int(self.virtual_variables[variable_name]["2_value"])
     def calculate_boland(self,boland,monster=None,other_user_flag = False):
         if boland == "":
             return 0
@@ -2626,15 +2628,26 @@ class DuelObj:
         eternal_effects = eternal_effects.order_by('eternal_effect_val')
         eternal_effects = eternal_effects.order_by('-priority')
         self.invoke_eternal_effect(eternal_effects,user,other_user)
-        none_chain_effects = EternalWrapper.objects.filter(none_timing=True)
+        none_chain_effects = EternalTrigger.objects.all()
+        none_chain_effects = none_chain_effects.filter(Q(phase__isnull=True) | Q(phase = phase))
+        none_chain_effects = none_chain_effects.filter(Q(chain__isnull = True) | \
+                                   (Q(chain_kind = 0) & Q(chain__lte=duel.chain)) | \
+                                   (Q(chain_kind = 1) & Q(chain__gte=duel.chain)) | \
+                                   (Q(chain_kind = 2) & Q(chain=duel.chain)))
+        if duel.timing != None:
+            none_chain_effects = none_chain_effects.filter(Q(timing=duel.timing))
+        else:
+            none_chain_effects = none_chain_effects.filter(Q(none_timing = True))
         none_chain_effects = none_chain_effects.order_by('-priority')
         eternal_det = json.loads(duel.eternal_det)
         flag = True
         for none_chain_effect in none_chain_effects:
             if none_chain_effect.id in eternal_det:
                 continue
-            kinds = none_chain_effect.monster_effect_kind
-            if self.invoke_no_chain_effect(none_chain_effect,user,other_user,kinds) == 0:
+            eternal_wrapper = none_chain_effect.eternal_effect_next
+
+            kinds = eternal_wrapper.monster_effect_kind
+            if self.invoke_no_chain_effect(eternal_wrapper,user,other_user,kinds) == 0:
                 eternal_det.append(none_chain_effect.id)
             else:
                 flag = False

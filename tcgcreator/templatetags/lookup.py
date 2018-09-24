@@ -3,6 +3,7 @@ from pprint import pprint
 from django.utils.html import escape
 from ..models import MonsterVariables,MonsterVariablesKind,MonsterItem,Monster,FieldKind,MonsterEffectKind,FieldSize,Field,Deck,Grave,Hand,FieldKind,Duel,Phase,UserDeck,UserDeckGroup
 register = template.Library()
+from pprint import pprint
 
 @register.filter(name='monsteritem')
 def monsteritem(id):
@@ -119,8 +120,10 @@ def get_user_deck(user_deck,arg):
 	return return_value
 @register.filter(name='get_field')
 def get_field(y,x):
-	field = Field.objects.filter(x=x,y=y).first()
-	return_value=field.kind.split("_")
-	return return_value
+    field = Field.objects.filter(x=x,y=y).first()
+    pprint(x)
+    pprint(y)
+    return_value=field.kind.split("_")
+    return return_value
 	
 

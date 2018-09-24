@@ -430,6 +430,86 @@
 		val = JSON.stringify(val2);
 		$("#"+id).val(val);
 	}
+    function showMonsterVariable(id){
+        $(".show_monster_variable_"+id).hide();
+        $(".hide_monster_variable_"+id).show();
+        $(".monster_variable_box"+id).show();
+        }
+    function hideMonsterVariable(id){
+        $(".show_monster_variable_"+id).show();
+        $(".hide_monster_variable_"+id).hide();
+        $(".monster_variable_box"+id).hide();
+        }
+    function showCardExist(){
+        $(".show_card_exist").hide();
+        $(".hide_card_exist").show();
+        $(".card_exist_box").show();
+        }
+    function hideCardExist(){
+        $(".show_card_exist").show();
+        $(".hide_card_exist").hide();
+        $(".card_exist_box").hide();
+        }
+    function showCustomMonsterCondition(){
+        $(".show_custom_monster_condition").hide();
+        $(".hide_custom_monster_condition").show();
+        $(".custom_monster_condition_box").show();
+        }
+    function hideCustomMonsterCondition(){
+        $(".show_custom_monster_condition").show();
+        $(".hide_custom_monster_condition").hide();
+        $(".custom_monster_condition_box").hide();
+        }
+    function showMonsterCondition(){
+        $(".show_monster_condition").hide();
+        $(".hide_monster_condition").show();
+        $(".monster_condition_box").show();
+        }
+    function hideMonsterCondition(){
+        $(".show_monster_condition").show();
+        $(".hide_monster_condition").hide();
+        $(".monster_condition_box").hide();
+        }
+    function showMonsterId(){
+        $(".show_monster_id").hide();
+        $(".hide_monster_id").show();
+        $(".monster_id_box").show();
+        }
+    function hideMonsterId(){
+        $(".show_monster_id").show();
+        $(".hide_monster_id").hide();
+        $(".monster_id_box").hide();
+        }
+    function showMonsterName(){
+        $(".show_monster_name").hide();
+        $(".hide_monster_name").show();
+        $(".monster_name_box").show();
+        }
+    function hideMonsterName(){
+        $(".show_monster_name").show();
+        $(".hide_monster_name").hide();
+        $(".monster_name_box").hide();
+        }
+    function showFlag(){
+        $(".show_flag").hide();
+        $(".hide_flag").show();
+        $(".flag_box").show();
+        }
+    function hideFlag(){
+        $(".show_flag").show();
+        $(".hide_flag").hide();
+        $(".flag_box").hide();
+        }
+    function showPlace(){
+        $(".show_place").hide();
+        $(".hide_place").show();
+        $(".trigger_condition_place_box").show();
+        }
+    function hidePlace(){
+        $(".show_place").show();
+        $(".hide_place").hide();
+        $(".trigger_condition_place_box").hide();
+        }
 	function addPlace(place,i,j){
 	$.ajax({
    'type': "POST",

@@ -147,7 +147,6 @@
         'url': "/tcgcreator/get_place_kind_to/",
    'data': "i=1",
 'success': function(data){
-        alert(data);
         $("#monster_effect_place_1_to").html(data);
         }
         });
@@ -158,9 +157,11 @@
         if(kind == 4){
             $("#monster_effect_move_to").show();
             $("#trigger_condition_all_add_button_0").hide();
+            $("#monster_effect_move_how").show();
         }else{
             $("#monster_effect_move_to").hide();
             $("#trigger_condition_all_add_button_0").show();
+            $("#monster_effect_move_how").hide();
         }
         if(kind == 0 || kind == 1 || kind==2 || kind==3 || kind == 4 || kind == 5  || kind==6){
             $("#"+id+"_place_tab").show();
@@ -169,6 +170,7 @@
         }
         if(kind == 2){
             $("#"+id+"_variable_condition_tab").show();
+            $("#monster_effect_move_how").hide();
         }else{
             $("#"+id+"_variable_condition_tab").hide();
         }
@@ -473,43 +475,43 @@
         $("#"+id+"_place_add_"+m+"_"+l).val(place["and_or"]);
         $("#"+id+"_place_"+m+"_"+l).val(place["det"]);
         }
-        for(var i=1;json[i] != undefined;i++){
-            json2 = json[i];
-            $("#monster_place_id_"+m+"_"+i).val(json2["place_id"]);
-            $("#monster_unique_id_"+m+"_"+i).val(json2["unique_id"]);
-            for(var j=0;json2["monster_name_kind"][j] != undefined;j++){
-                $("#get_monster_name_equal_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["operator"]) ;
-                $("#monster_name_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["monster_name"]);
-                $("#monster_name_and_or_"+m+"_"+i+"_"+j).val(json["monster_name_kind"][j]["and_or"]);
-            }
+        $("#monster_place_id_"+m+"_1").val(json["place_id"]);
+        $("#monster_unique_id_"+m+"_1").val(json["unique_id"]);
+        for(var j=0;json["monster_name_kind"][j] != undefined;j++){
+                $("#get_monster_name_equal_"+m+"_1_"+j).val(json["monster_name_kind"][j]["operator"]) ;
+                $("#monster_name_"+m+"_1_"+j).val(json["monster_name_kind"][j]["monster_name"]);
+                $("#monster_name_and_or_"+m+"_1_"+j).val(json["monster_name_kind"][j]["and_or"]);
         }
         if(json["flag"]["operator"]!= undefined){
-           $("#flag_equal_"+m+"_"+i).val(json["flag"]["operator"]);
-            $("#flag_"+m+"_"+i).val(json["flag"]["flag_det"] );
+           $("#flag_equal_"+m+"_1").val(json["flag"]["operator"]);
+            $("#flag_"+m+"_1").val(json["flag"]["flag_det"] );
         }
-        for(j=1;json["monster_condition"][j] != undefined;j++){
-            for(p=1;$("#get_monster_variable_"+m+"_"+i+"_"+p+"_0").length != 0;p++){
-                if(json["monster_condition"][j][0]["name"] == $("#get_monster_variable_name_"+m+"_"+i+"_"+p).val()){
+        for(j=1;json["monster_condition"][j-1] != undefined;j++){
+            for(p=1;$("#get_monster_variable_"+m+"_1_"+p+"_0").length != 0;p++){
+                if(json["monster_condition"][j-1][0]["name"] == $("#get_monster_variable_name_"+m+"_1_"+p).val()){
                     break;
                 }
             }
-            $("#monster_variable_init_"+m+"_"+i+"_"+p+"_"+0).val(json["monster_condition"][j][0]["init"]);
-            for(k=0;json["monster_condition"][j][k] != undefined;k++){
+            $("#monster_variable_init_"+m+"_1_"+p+"_"+0).val(json["monster_condition"][j-1][0]["init"]);
+            for(k=0;json["monster_condition"][j-1][k] != undefined;k++){
 
-                $("#get_monster_variable_"+m+"_"+i+"_"+j+"_"+p).val(json["monster_condition"][j][k]["num"]);
-                $("#get_monster_variable_equal_"+m+"_"+i+"_"+j+"_"+k).val(json["monster_condition"][j][k]["operator"]);
-                $("#monster_variable_and_or_"+m+"_"+i+"_"+j+"_"+k).val(json["monster_condition"][j][k]["and_or"]);
+                if(k!=0){
+                   addMonsterEquation(m+"_1_"+p+"_"+(k-1));
+                }
+                $("#get_monster_variable_"+m+"_1_"+p+"_"+k).val(json["monster_condition"][j-1][k]["num"]);
+                $("#get_monster_variable_equal_"+m+"_1_"+p+"_"+k).val(json["monster_condition"][j-1][k]["operator"]);
+                $("#monster_variable_and_or_"+m+"_1_"+p+"_"+k).val(json["monster_condition"][j-1][k]["and_or"]);
             }
          }
-        for(j=1;json["custom_monster_condition"][j] != undefined;j++){
-            for(k=0;json["custom_monster_condition"][j][k] != undefined;k++){
+        for(j=1;json["custom_monster_condition"][j-1] != undefined;j++){
+            for(k=0;json["custom_monster_condition"][j-1][k] != undefined;k++){
                 if(k==0){
-                    addCustomMonsterCondition(m+'_'+i+'_'+j+'_'+k);
+                    addCustomMonsterCondition(m+'_1_'+j+'_'+k);
                 }
-                $("#custom_monster_variable_"+m+"_"+i+"_"+j+"_0").val(json["custom_monster_condition"][j][k]["name"]);
-                $("#custom_get_monster_variable_"+m+"_"+i+"_"+j+"_"+p).val(json["custom_monster_condition"][j][k]["num"]);
-                $("#custom_get_monster_variable_equal_"+m+"_"+i+"_"+j+"_"+k).val(json["custom_monster_condition"][j][k]["operator"]);
-                $("#custom_monster_variable_and_or_"+m+"_"+i+"_"+j+"_"+k).val();
+                $("#custom_monster_variable_"+m+"_1_"+j+"_0").val(json["custom_monster_condition"][j-1][k]["name"]);
+                $("#custom_get_monster_variable_"+m+"_1_"+j+"_"+p).val(json["custom_monster_condition"][j-1][k]["num"]);
+                $("#custom_get_monster_variable_equal_"+m+"_1_"+j+"_"+k).val(json["custom_monster_condition"][j-1][k]["operator"]);
+                $("#custom_monster_variable_and_or_"+m+"_1_"+j+"_"+k).val();
             }
          }
             $("#as_"+id+"_"+m).val(json["as_monster_condition"]);
@@ -626,11 +628,16 @@
         }
         json["monster_condition"] = [];
         index2 = 0;
+        index_flag = false;
         for(j=1;$("#get_monster_variable_"+m+"_"+i+"_"+j+"_0").length != 0;j++){
             name = $("#get_monster_variable_name_"+m+"_"+i+"_"+j).val();
             init= $("#monster_variable_init_"+m+"_"+i+"_"+j+"_"+0).val();
             init = parseInt(init);
             index = 0;
+                if(index_flag == true){
+                    index2++;
+                }
+                index_flag = false;
             for(k=0;$("#get_monster_variable_"+m+"_"+i+"_"+j+"_"+k).length != 0;k++){
             if($("#get_monster_variable_equal_"+m+"_"+i+"_"+j+"_"+k).length != 0){
                 num = $("#get_monster_variable_"+m+"_"+i+"_"+j+"_"+k).val();
@@ -642,8 +649,6 @@
                 if( json["monster_condition"][index2] == undefined){
                     json["monster_condition"][index2] = [];
                     index_flag = true;
-                }else{
-                    index_flag = false;
                 }
                 if( json["monster_condition"][index2][index] == undefined){
                     json["monster_condition"][index2][index] = {};
@@ -653,9 +658,6 @@
                 json["monster_condition"][index2][index]["num"] = num;
                 json["monster_condition"][index2][index]["operator"] = operator;
                 json["monster_condition"][index2][index]["and_or"] = and_or;
-                if(index_flag == true){
-                    index2++;
-                }
                 index++;
 
             }else{
@@ -667,8 +669,6 @@
                 if( json["monster_condition"][index2] == undefined){
                     json["monster_condition"][index2] = [];
                     index_flag = true;
-                }else{
-                    index_flag = false;
                 }
                 if( json["monster_condition"][index2][index] == undefined){
                     json["monster_condition"][index2][index] = {};
@@ -678,10 +678,10 @@
                 json["monster_condition"][index2][index]["num"] = num;
                 json["monster_condition"][index2][index]["operator"] = "";
                 json["monster_condition"][index2][index]["and_or"] = and_or;
-                index++;
                 if(index_flag == true){
                     index2++;
                 }
+                index++;
             }
             }
 
@@ -783,7 +783,7 @@
             $("#"+id+"_all_add_button_"+i).hide();
         }
     var j=i+1;
-    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br><select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select> <div id="'+id+'_'+j+'_1"> </div> <div id="'+id+"_field_x_and_y_"+j+'"></div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div><div id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
+    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br> 場所 <a class="show_place" href="javascript:showPlace()">+</a><a style="display:none" class="hide_place" href="javascript:hidePlace()">-</a> <div class="trigger_condition_place_box" style="display:none"> <select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select></div> <div id="'+id+'_'+j+'_1"> </div> <div id="'+id+"_field_x_and_y_"+j+'"></div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div><div id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
     $("#"+id+"_all_button_"+i).after('<select id="'+id+'_and_or_'+j+'"><option value=""></option><option value="and">かつ</option><option value="or">または</option></select><input type="button" value="'+(j+1)+'" onclick="displayConditionAll(\''+id+'\','+j+')" id="'+id+'_all_button_'+j+'"><input id="trigger_condition_all_add_button_'+j+'" type="button" value="追加" onclick="addConditionPlaceAll(\''+id+'\','+j+')">');
     $.ajax({
    'type': "POST",

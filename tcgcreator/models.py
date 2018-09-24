@@ -362,6 +362,18 @@ class MonsterEffectWrapper(models.Model):
     log = models.TextField(default="",blank=True)
     def __str__(self):
         return self.monster_effect_name
+class EternalTrigger(models.Model):
+    priority = models.IntegerField(default="100")
+    turn = models.IntegerField(choices=MINE_OR_OTHER)
+    chain = models.IntegerField(default=0,blank=True,null=True)
+    chain_kind = models.IntegerField(default=0,blank=True,choices = CHAIN)
+    phase = models.ForeignKey('Phase',default=None,blank=True,null=True,on_delete=models.SET_NULL)
+    timing = models.ManyToManyField(Timing,default=None,blank = True,null=True)
+    none_timing = models.BooleanField(default=False)
+    eternal_effect_next = models.ForeignKey(EternalWrapper,default=None,blank = True,null=True,on_delete=models.SET_NULL)
+    eternal_name = models.CharField(max_length=32,default=None,null=True,blank=True)
+    def __str__(self):
+        return self.eternal_name
 class EternalEffect(models.Model):
     eternal_effect_val = models.IntegerField(choices=ETERNAL_EFFECT_VAL,default=0)
     eternal_effect_val2 = models.IntegerField(choices=ETERNAL_EFFECT_VAL2,default=0)

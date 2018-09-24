@@ -69,6 +69,9 @@
 <input type="button" value="1" onclick="displayConditionAll('trigger_condition',0)" class="active" id="trigger_condition_all_button_0"><input id="trigger_condition_all_add_button_0" type="button" value="追加" onclick="addConditionPlaceAll('trigger_condition',0)">
 <div id="choose_trigger_condition_0">
 <input type="button" value="条件1" onclick="displayCondition('trigger_condition',0,1)" class="active" id="trigger_condition_button_0_1"><input type="button" value="追加" id="trigger_condition_add_button_0_1" onclick="addConditionPlace('trigger_condition',0,1)"><br>
+
+場所 <a class="show_place" href="javascript:showPlace()">+</a><a style="display:none" class="hide_place" href="javascript:hidePlace()">-</a>
+<div class="trigger_condition_place_box" style="display:none">
 <select id="trigger_condition_place_0_0" class="trigger_condition_place" style="display:none">
 </select>
 <select id="trigger_condition_place_add_0_0" onchange="addPlace('trigger_condition_place',0,1)" class="trigger_condition_place" style="display:none">
@@ -76,15 +79,19 @@
 <option value="and">かつ</option>
 <option value="or">または</option>
 </select>
-</div>
     <select id="monster_effect_move_how">
         <option value="0">上から</option>
         <option value="1">下から</option>
         <option value="2">ランダム</option>
     </select>
+</div>
 <div id="trigger_condition_0_1">
 	</div>
-カード有無<input type="checkbox" id="monster_exist" value="1">
+カード有無 <a class="show_card_exist" href="javascript:showCardExist()">+</a><a style="display:none" class="hide_card_exist" href="javascript:hideCardExist()">-</a>
+    <div class="card_exist_box" style="display:none">
+<input type="checkbox" id="monster_exist" value="1">
+    </div>
+    <br>
 選択表示<input type="text" id="sentence" value="">
 <div id="trigger_condition_field_x_and_y_0">
 </div>

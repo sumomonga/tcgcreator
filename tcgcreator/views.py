@@ -681,16 +681,21 @@ def get_monster_trigger_condition(req):
     result = ""
     monster_variables = MonsterVariables.objects.all()
 
-    result+="フラグ <input type=\"text\" id=\"flag\">"
-    result+='<select id="flag_equal"><option value="">全て</option><option value="=">=</option></select><br>'
-    result+="モンスター名 <input type=\"text\" id=\"monster_name_0\" onfocus=\"showMonsterNameEqual('"+str(i)+"_0')\" >"
-    result+='モンスター位置<input type=\"text\" id=\"monster_place_id_0_1_0\">'
-    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id_0_1_0\">'
+    result+='フラグ<a class="show_flag" href="javascript:showFlag()">+</a><a style="display:none"  class="hide_flag" href="javascript:hideFlag()">-</a><div class="flag_box" style="display:none"><input type="text" id="flag">'
+    result+='<select id="flag_equal"><option value="">全て</option><option value="=">=</option></select></div><br>'
+    result+="モンスター名<a class=\"show_monster_name\" href=\"javascript:showMonsterName()\">+</a><a style=\"display:none\"  class=\"hide_monster_name\" href=\"javascript:hideMonsterName()\">-</a><div class=\"monster_name_box\" style=\"display:none\"> <input type=\"text\" id=\"monster_name_0\" onfocus=\"showMonsterNameEqual('"+str(i)+"_0')\" >"
     result+='<select id="get_monster_name_equal_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'
     result+='<select id="monster_name_and_or_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_name_add_0" type="button" value="追加"  onclick="addMonsterName(\''+str(i)+'_0\')"><br>'
+    result+='</div><br>'
+    result+='モンスターID<a class="show_monster_id" href="javascript:showMonsterId()">+</a><a style="display:none"  class="hide_monster_id" href="javascript:hideMonsterId()">-</a><div class="monster_id_box" style="display:none">'
+    result+='モンスター位置ID<input type=\"text\" id=\"monster_place_id_0_1_0\"><br>'
+    result+='モンスターユニークID<input type=\"text\" id=\"monster_unique_id_0_1_0\">'
+    result+='</div><br>'
+    result+='モンスター変数条件<a class="show_monster_condition" href="javascript:showMonsterCondition()">+</a><a style="display:none"  class="hide_monster_condition" href="javascript:hideMonsterCondition()">-</a><div class="monster_condition_box" style="display:none">'
     for monster_variable in monster_variables:
+        result+=monster_variable.monster_variable_name+'<a class="show_monster_variable_'+str(monster_variable.id)+'" href="javascript:showMonsterVariable('+str(monster_variable.id)+')">+</a><a class="hide_monster_variable_'+str(monster_variable.id)+'" href="javascript:hideMonsterVariable('+str(monster_variable.id)+')">-</a><div class="monster_variable_box'+str(monster_variable.id)+'" style="display:none">'
         if (monster_variable.monster_variable_kind_id.id == 0 or monster_variable.monster_variable_kind_id.id == 1):
-            result+=monster_variable.monster_variable_name+"<input type=\"text\" onfocus=\"showMonsterEquation('get_monster_variable_"+str(monster_variable.id)+"_0')\" id=\"get_monster_variable_"+str(monster_variable.id)+"_0\">"
+            result+="<input type=\"text\" onfocus=\"showMonsterEquation('get_monster_variable_"+str(monster_variable.id)+"_0')\" id=\"get_monster_variable_"+str(monster_variable.id)+"_0\">"
             result+='<input type="hidden" id="get_monster_variable_name_'+str(monster_variable.id)+'" value="'+monster_variable.monster_variable_name+'">'
             result+='<select id="get_monster_variable_equal_'+str(monster_variable.id)+'_0"><option value="">全て</option><option value="=">=</option><option value="!=">!=</option><option value=">=">&gt;=</option><option value="<=">&lt;=</option></select>'
             result+='<select id="monster_variable_and_or_'+str(monster_variable.id)+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_variable_add_'+str(monster_variable.id)+'_0" type="button" value="追加"  onclick="addMonsterEquation(\''+str(i)+'_'+str(monster_variable.id)+'_0\')"><br>'
@@ -698,7 +703,7 @@ def get_monster_trigger_condition(req):
 
         else:
             result+='<input type="hidden" id="get_monster_variable_name_'+str(monster_variable.id)+'" value="'+monster_variable.monster_variable_name+'">'
-            result+=monster_variable.monster_variable_name+"<select id=\"get_monster_variable"+"_"+str(monster_variable.id)+"_0\">"
+            result+="<select id=\"get_monster_variable"+"_"+str(monster_variable.id)+"_0\">"
             result+="<option value=\"0\">全て</option>"
             result+='<select id="monster_variable_init_'+str(monster_variable.id)+'_0" > <option value="0">現在の値</option><option value="1">元々の値</option> <option value="2">元々の元々の値</option> </select><input id="monster_variable_add_'+str(monster_variable.id)+'_0" type="button" value="追加"  onclick="addMonsterEquation(\''+str(i)+'_'+str(monster_variable.id)+'_0\')"><br>'
 
@@ -711,6 +716,8 @@ def get_monster_trigger_condition(req):
                 k+=1
             result+="</select>"
             result+='<select id="monster_variable_and_or_'+str(monster_variable.id)+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_variable_add'+"_"+str(monster_variable.id)+'_0" type="button" value="追加"  onclick="addMonsterEquation2(\''+str(i)+'_'+str(monster_variable.id)+'_0\',\''+kinds_org+'\')"><br>'
+        result+="</div><br>"
+    result+="</div><br>"
     return HttpResponse(result)
 def get_monster_move(req):
 
@@ -723,14 +730,19 @@ def get_monster_move(req):
     result = ""
     monster_variables = MonsterVariables.objects.all()
 
-    result+="フラグ <input type=\"text\" id=\"flag"+add_i+"\">"
-    result+='<select id="flag_equal'+add_i+'"><option value="">全て</option><option value="=">=</option></select><br>'
-    result+="モンスター名 <input type=\"text\" id=\"monster_name"+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(i)+"_0')\" >"
-    result+='モンスター位置<input type=\"text\" id=\"monster_place_id_0\">'
-    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id_0\">'
+    result+='フラグ<a class="show_flag" href="javascript:showFlag()">+</a><a style="display:none" class="hide_flag" href="javascript:hideFlag()">-</a><div class="flag_box" style="display:none"><input type="text" id="flag">'
+    result+='<select id="flag_equal'+add_i+'"><option value="">全て</option><option value="=">=</option></select></div><br>'
+    result+="モンスター名<a class=\"show_monster_name\" href=\"javascript:showMonsterName()\">+</a><a style=\"display:none\"  class=\"hide_monster_name\" href=\"javascript:hideMonsterName()\">-</a><div class=\"monster_name_box\" style=\"display:none\"> <input type=\"text\" id=\"monster_name"+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(i)+"_0')\" >"
     result+='<select id="get_monster_name_equal'+add_i+'_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'
     result+='<select id="monster_name_and_or'+add_i+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_name_add'+add_i+'_0" type="button" value="追加"  onclick="addMonsterName(\''+str(i)+'_0\')"><br>'
+    result+='</div><br>'
+    result+='モンスターID<a class="show_monster_id" href="javascript:showMonsterId()">+</a><a style="display:none"  class="hide_monster_id" href="javascript:hideMonsterId()">-</a><div class="monster_id_box" style="display:none">'
+    result+='モンスター位置ID<input type=\"text\" id=\"monster_place_id_0\"><br>'
+    result+='モンスターユニークID<input type=\"text\" id=\"monster_unique_id_0\">'
+    result+='</div><br>'
+    result+='モンスター変数条件<a class="show_monster_condition" href="javascript:showMonsterCondition()">+</a><a style="display:none" class="hide_monster_condition" href="javascript:hideMonsterCondition()">-</a><div class="monster_condition_box" style="display:none">'
     for monster_variable in monster_variables:
+        result+=monster_variable.monster_variable_name+'<a class="show_monster_variable_'+str(monster_variable.id)+'" href="javascript:showMonsterVariable('+str(monster_variable.id)+')">+</a><a style="display:none" class="hide_monster_variable_'+str(monster_variable.id)+'" href="javascript:hideMonsterVariable('+str(monster_variable.id)+')">-</a><div class="monster_variable_box'+str(monster_variable.id)+'" style="display:none">'
         if (monster_variable.monster_variable_kind_id.id == 0 or monster_variable.monster_variable_kind_id.id == 1):
             result+='<input type="hidden" id="get_monster_variable_name'+add_i+"_"+str(monster_variable.id)+'" value="'+monster_variable.monster_variable_name+'">'
             result+=monster_variable.monster_variable_name+"<input type=\"text\" onfocus=\"showMonsterEquation('get_monster_variable"+add_i+"_"+str(monster_variable.id)+"_0')\" id=\"get_monster_variable"+add_i+"_"+str(monster_variable.id)+"_0\">"
@@ -753,6 +765,8 @@ def get_monster_move(req):
                 k+=1
             result+="</select>"
             result+='<select id="monster_variable_and_or'+add_i+"_"+str(monster_variable.id)+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_variable_add'+add_i+"_"+str(monster_variable.id)+'_0" type="button" value="追加"  onclick="addMonsterEquation2(\''+str(i)+'_'+str(monster_variable.id)+'_0\',\''+kinds_org+'\')"><br>'
+        result+="</div><br>"
+    result+="</div><br>"
     return HttpResponse(result)
 def get_monster_condition(req):
 
@@ -770,14 +784,19 @@ def get_monster_condition(req):
     result = ""
     monster_variables = MonsterVariables.objects.all()
 
-    result+="フラグ <input type=\"text\" id=\"flag"+add_j+add_i+"\">"
-    result+='<select id="flag_equal'+add_j+add_i+'"><option value="">全て</option><option value="=">=</option></select><br>'
-    result+="モンスター名 <input type=\"text\" id=\"monster_name"+add_j+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(j)+"_"+str(i)+"_0')\" >"
-    result+='モンスター位置<input type=\"text\" id=\"monster_place_id'+add_j+add_i+'\">'
-    result+='モンスターユニーク<input type=\"text\" id=\"monster_unique_id'+add_j+add_i+'\">'
+    result+='フラグ<a class="show_flag" href="javascript:showFlag()">+</a><a style="display:none"  class="hide_flag" href="javascript:hideFlag()">-</a><div class="flag_box" style="display:none"><input type="text" id="flag">'
+    result+='<select id="flag_equal'+add_j+add_i+'"><option value="">全て</option><option value="=">=</option></select></div><br>'
+    result+="モンスター名<a class=\"show_monster_name\" href=\"javascript:showMonsterName()\">+</a><a style=\"display:none\"  class=\"hide_monster_name\" href=\"javascript:hideMonsterName()\">-</a><div class=\"monster_name_box\" style=\"display:none\"><input type=\"text\" id=\"monster_name"+add_j+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(j)+"_"+str(i)+"_0')\" >"
     result+='<select id="get_monster_name_equal'+add_j+add_i+'_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'
     result+='<select id="monster_name_and_or'+add_j+add_i+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select><input id="monster_name_add'+add_j+add_i+'_0" type="button" value="追加"  onclick="addMonsterName(\''+str(j)+"_"+str(i)+'_0\')"><br>'
+    result+='</div><br>'
+    result+='モンスターID<a class="show_monster_id" href="javascript:showMonsterId()">+</a><a style="display:none"  class="hide_monster_id" href="javascript:hideMonsterId()">-</a><div class="monster_id_box" style="display:none">'
+    result+='モンスター位置ID<input type=\"text\" id=\"monster_place_id'+add_j+add_i+'\"><br>'
+    result+='モンスターユニークID<input type=\"text\" id=\"monster_unique_id'+add_j+add_i+'\"><br>'
+    result+='</div><br>'
+    result+='モンスター変数条件<a class="show_monster_condition" href="javascript:showMonsterCondition()">+</a><a style="display:none"  class="hide_monster_condition" href="javascript:hideMonsterCondition()">-</a><div class="monster_condition_box" style="display:none">'
     for monster_variable in monster_variables:
+        result+=monster_variable.monster_variable_name+'<a class="show_monster_variable_'+str(monster_variable.id)+'" href="javascript:showMonsterVariable('+str(monster_variable.id)+')">+</a><a style="display:none" class="hide_monster_variable_'+str(monster_variable.id)+'" href="javascript:hideMonsterVariable('+str(monster_variable.id)+')">-</a><div class="monster_variable_box'+str(monster_variable.id)+'" style="display:none">'
         if (monster_variable.monster_variable_kind_id.id == 0 or monster_variable.monster_variable_kind_id.id == 1):
             result+='<input type="hidden" id="get_monster_variable_name'+add_j+add_i+"_"+str(monster_variable.id)+'" value="'+monster_variable.monster_variable_name+'">'
             result+=monster_variable.monster_variable_name+"<input type=\"text\" onfocus=\"showMonsterEquation('get_monster_variable"+add_j+add_i+"_"+str(monster_variable.id)+"_0')\" id=\"get_monster_variable"+add_j+add_i+"_"+str(monster_variable.id)+"_0\">"
@@ -802,7 +821,11 @@ def get_monster_condition(req):
             result+='<select id="monster_variable_and_or'+add_j+add_i+"_"+str(monster_variable.id)+'_0" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select>'
             result+='<select id="monster_variable_init'+add_j+add_i+"_"+str(monster_variable.id)+'_0" > <option value="0">現在の値</option><option value="1">元々の値</option> <option value="2">元々の元々の値</option> </select>'
             result+='<input id="monster_variable_add_'+str(j)+"_"+str(i)+"_"+str(monster_variable.id)+'_0" type="button" value="追加"  onclick="addMonsterEquation(\''+str(j)+'_'+str(i)+'_'+str(monster_variable.id)+'_0\')"><br>'
+        result+="</div><br>"
+    result+="</div><br>"
+    result+='カスタムモンスター変数条件<a class="show_custom_monster_condition" href="javascript:showCustomMonsterCondition()">+</a><a style="display:none"  class="hide_custom_monster_condition" href="javascript:hideCustomMonsterCondition()">-</a><div class="custom_monster_condition_box" style="display:none">'
     result+='<input type="button" value="カスタム追加" id="custom_add_'+str(j)+"_"+str(i)+'_0_0" class="custom_add" onclick="addCustomMonsterCondition(\''+str(j)+"_"+str(i)+'_0_0\')">'
+    result+='</div><br>'
     return HttpResponse(result)
 def get_monster_to(req):
 

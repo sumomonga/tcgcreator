@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .forms import FieldForm
-from .models import MonsterVariablesKind, MonsterVariables,Monster,MonsterItem,FieldSize,Field,FieldKind,MonsterEffectKind,MonsterEffect,Deck,Hand,Grave,Trigger,Phase,Duel,UserDeckGroup,Config,GlobalVariable,MonsterEffectWrapper,Cost,CostWrapper,DefaultDeck,TriggerTiming,Timing,Pac,PacWrapper,EternalEffect,PacCost,PacCostWrapper,DuelHand,VirtualVariable,EternalWrapper,DuelDeck,DuelGrave,Flag
+from .models import MonsterVariablesKind, MonsterVariables,Monster,MonsterItem,FieldSize,Field,FieldKind,MonsterEffectKind,MonsterEffect,Deck,Hand,Grave,Trigger,Phase,Duel,UserDeckGroup,Config,GlobalVariable,MonsterEffectWrapper,Cost,CostWrapper,DefaultDeck,TriggerTiming,Timing,Pac,PacWrapper,EternalEffect,PacCost,PacCostWrapper,DuelHand,VirtualVariable,EternalWrapper,DuelDeck,DuelGrave,Flag,EternalTrigger
 from .custom_functions  import init_monster_item,init_field
 # Register your models here.
 #class MyModelAdmin(admin.ModelAdmin):
@@ -159,6 +159,13 @@ admin.site.register(UserDeckGroup)
 admin.site.register(Config)
 admin.site.register(GlobalVariable)
 admin.site.register(VirtualVariable,VirtualVariableAdmin)
+class EternalTriggerAdmin(admin.ModelAdmin):
+    def has_delete_permission(self,request, obj=None):
+        return True
+    change_form_template =  "admin/tcgcreator/monster_effect.html"
+    class Media:
+        js = ['js/monster_effect_choose_both.js','js/monster_effect_choose.js','js/monster_effect_move.js','js/monster_variable_change.js','js/jquery-2.2.0.min.js','js/monster_effect_kind.js','js/field_kind2.js','js/monster_effect.js','js/common.js','js/jquery-ui-1.12.1/jquery-ui.min.js','js/ajax.js','js/monster_condition.js']
+admin.site.register(EternalTrigger,EternalTriggerAdmin)
 class EternalWrapperAdmin(admin.ModelAdmin):
     def has_delete_permission(self,request, obj=None):
         return True
