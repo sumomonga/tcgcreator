@@ -186,6 +186,8 @@ def battle_det(request,duelobj = None,choices = None):
     return battle_det_return(duelobj,decks,graves,hands,user,other_user,choices,room_number)
 def battle_det_return(duelobj,decks,graves,hands,user,other_user,choices,room_number):
     duel = duelobj.duel
+    if duel.winner !=0:
+        return battle_det_return_org(duelobj,decks,graves,hands,user,other_user,choices,room_number)
     return_value={}
     return_value["variable"] = duelobj.get_variables()
     return_value["phase"] = duel.phase.id

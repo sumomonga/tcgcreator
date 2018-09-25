@@ -88,7 +88,7 @@
     })
     var i=0;
     var j=1;
-    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br><select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select> <div id="'+id+'_'+j+'_1"> </div> <div id="'+id+"_field_x_and_y_"+j+'"></div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div><div id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
+    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br><select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select> <div id="'+id+'_'+j+'_1"> </div> <div id="'+id+"_field_x_and_y_"+j+'"></div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div>as<a class="show_as_monster" href="javascript:showAsMonster()">+</a><a style="display:none" class="hide_as_monster" href="javascript:hideAsMonster()">-</a><div "display:none" class="as_monster" id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
     $.ajax({
    'type': "POST",
    'url': "/tcgcreator/get_place_kind/",
@@ -140,7 +140,6 @@
         $("#"+id).offset({top:x,left:y});
         $("#"+id+"_0_1").show();
         if(kind == 3 || kind == 4 || kind == 1){
-            $("#monster_variable_change").show();
             $("#monster_effect_place_to").show();
             $.ajax({
            'type': "POST",
@@ -151,7 +150,6 @@
         }
         });
         }else{
-            $("#monster_variable_change").hide();
             $("#monster_effect_place_to").hide();
         }
         if(kind == 4){
@@ -290,7 +288,6 @@
             if($.inArray("flag_change_val",val)){
                 $("#flag_change_val").val(val["flag_change_val"]);
             }
-            $("#monster_variable_change").show();
             $("#monster_effect_place_to").show();
             $.ajax({
            'type': "POST",
@@ -313,7 +310,6 @@
         }
         });
         }else{
-            $("#monster_variable_change").hide();
             $("#monster_effect_place_to").hide();
         }
         if(kind == 4){
@@ -520,7 +516,7 @@
         tmp["equation"] = {};
         $("#get_equation_det_"+m).val(val["monster"][m]["equation"]["equation"]);
         $("#get_equation_kind_"+m).val(val["monster"][m]["equation"]["equation_kind"]);
-        $("#get_equation_number_"+m).val(val["monster"][m]["equation"]["equation_number"]);
+        //$("#get_equation_number_"+m).val(val["monster"][m]["equation"]["equation_number"]);
         $("#"+id+"_and_or_"+m).val(val["monster"][m]["and_or"]);
         $("#exclude_"+m).val(val["exclude"]);
         for(var field_x =0;val["field_x"][field_x] != undefined;field_x++){
@@ -715,7 +711,7 @@
         tmp["equation"] = {};
         tmp["equation"]["equation"] = $("#get_equation_det_"+m).val();
         tmp["equation"]["equation_kind"] = $("#get_equation_kind_"+m).val();
-        tmp["equation"]["equation_number"] = $("#get_equation_number_"+m).val();
+       // tmp["equation"]["equation_number"] = $("#get_equation_number_"+m).val();
         var and_or = $("#"+id+"_and_or_"+m).val();
         if( and_or ==  undefined){
             and_or = "and"
@@ -783,7 +779,7 @@
             $("#"+id+"_all_add_button_"+i).hide();
         }
     var j=i+1;
-    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br> 場所 <a class="show_place" href="javascript:showPlace()">+</a><a style="display:none" class="hide_place" href="javascript:hidePlace()">-</a> <div class="trigger_condition_place_box" style="display:none"> <select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select></div> <div id="'+id+'_'+j+'_1"> </div> <div id="'+id+"_field_x_and_y_"+j+'"></div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div><div id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
+    $("#choose_"+id+"_"+i).after('<div id="choose_'+id+'_'+j+'"> <input type="button" class="active" value="条件1" onclick="displayCondition(\''+id+'\','+j+',1)" id="'+id+'_button_'+j+'_1"><input type="button" value="追加" id="'+id+'_add_button_'+j+'_1" onclick="addConditionPlace(\''+id+'\','+j+',1)"><br> 場所 <a class="show_place" href="javascript:showPlace()">+</a><a style="display:none" class="hide_place" href="javascript:hidePlace()">-</a> <div class="trigger_condition_place_box" style="display:none"> <select id="'+id+'_place_'+j+'_0" class="'+id+'_place" style=""> </select> <select id="'+id+'_place_add_'+j+'_0" onchange="addPlace(\''+id+'_place\','+j+',1)" class="'+id+'_place" style=""> <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select></div> <div id="'+id+'_'+j+'_1"> </div>カード有無 <a class="show_card_exist" href="javascript:showCardExist()">+</a><a style="display:none" class="hide_card_exist" href="javascript:hideCardExist()">-</a> <div class="card_exist_box" style="display:none"> <input type="checkbox" id="monster_exist" value="1"> </div><br> フィールド位置  <a class="show_field_x_and_y" href="javascript:showFieldXandY()">+</a><a style="display:none" class="hide_field_x_and_y" href="javascript:hideFieldXandY()">-</a> <div style="display:none" class="field_x_and_y" id="trigger_condition_field_x_and_y_'+j+'"> </div><div id="'+id+'_equation_'+j+'" class="'+id+'_equation" style=""></div> </div> </div><div id="as_'+id+'_wrapper_'+j+'">as <input type="text" id="as_'+id+'_'+j+'"></div> </div > </div></div>');
     $("#"+id+"_all_button_"+i).after('<select id="'+id+'_and_or_'+j+'"><option value=""></option><option value="and">かつ</option><option value="or">または</option></select><input type="button" value="'+(j+1)+'" onclick="displayConditionAll(\''+id+'\','+j+')" id="'+id+'_all_button_'+j+'"><input id="trigger_condition_all_add_button_'+j+'" type="button" value="追加" onclick="addConditionPlaceAll(\''+id+'\','+j+')">');
     $.ajax({
    'type': "POST",
@@ -817,6 +813,8 @@
                         'success': function(data){
                             $("."+id+"_field_x_and_y").show();
                             $("#"+id+"_field_x_and_y_"+j).html(data);
+                            var jyogai = '<br>除外 <a class="show_exclude" href="javascript:showExclude()">+</a><a style="display:none" class="hide_exclude" href="javascript:hideExclude()">-</a> <div style="display:none" class="exclude"> <input type="text" id="exclude_0" ></div>'
+                            $("#"+id+"_field_x_and_y_"+j).after(jyogai);
                          }
                     })
                     }

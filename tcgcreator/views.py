@@ -933,13 +933,14 @@ def get_equation(req):
     result_tmp=""
     for monster_variable in monster_variables:
         result_tmp += '<option value="'+str(monster_variable.monster_variable_name)+'">'+monster_variable.monster_variable_name+'</option>'
-    result = ""
-    result+='除外<input type="text" id="exclude_'+c+'" >'
+    result = 'モンスターの数<a class="show_equation" href="javascript:showEquation()">+</a><a style="display:none" class="hide_equation" href="javascript:hideEquation()">-</a>'
+    result +='<div style="display:none" class="monster_equation">'
     result+='演算子<select id="get_equation_det_'+c+'"><option value="=">=</option><option value="!=">!=</option><option value=">=">&gt;=</option><option value="<=">&lt;=</option></select><br>'
     result+='種類<select id="get_equation_kind_'+c+'"><option value="number">数</option><option value="kind">種類</option><option value="x">x</option><option value="y">y</option>'+result_tmp+'</select><br>'
-    result+='数<input type="number" id="get_equation_number_'+c+'">';
+#    result+='数<input type="number" id="get_equation_number_'+c+'">';
     result+='min<input type="text" id="min_equation_number_'+c+'" onfocus="showMinEquation('+c+')">';
     result+='max<input type="text" id="max_equation_number_'+c+'" onfocus="showMaxEquation('+c+')">';
+    result +='</div>'
     return HttpResponse(result)
 def get_field_x_and_y(req):
     if "c" in req.POST:

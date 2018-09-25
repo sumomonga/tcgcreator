@@ -92,15 +92,28 @@
 <input type="checkbox" id="monster_exist" value="1">
     </div>
     <br>
-選択表示<input type="text" id="sentence" value="">
-<div id="trigger_condition_field_x_and_y_0">
+    <!---
+選択表示 <a class="show_sentence" href="javascript:showSentence()">+</a><a style="display:none" class="hide_sentence" href="javascript:hideSentence()">-</a>
+    <div class="sentence_box" style="display:none">
+    <input type="text" id="sentence" value="">
+    </div>
+    --->
+フィールド位置  <a class="show_field_x_and_y" href="javascript:showFieldXandY()">+</a><a style="display:none" class="hide_field_x_and_y" href="javascript:hideFieldXandY()">-</a>
+<div style="display:none" class="field_x_and_y" id="trigger_condition_field_x_and_y_0">
 </div>
+    <br>
+除外 <a class="show_exclude" href="javascript:showExclude()">+</a><a style="display:none" class="hide_exclude" href="javascript:hideExclude()">-</a>
+    <div style="display:none" class="exclude">
+   <input type="text" id="exclude_0" >'
+    </div>
 <div id="trigger_condition_equation_0" class="trigger_condition_equation" style="display:none"></div>
-<div id="as_trigger_condition_wrapper_0">
-as<input type="text" id="as_trigger_condition_0">
+as<a class="show_as_monster" href="javascript:showAsMonster()">+</a><a style="display:none" class="hide_as_monster" href="javascript:hideAsMonster()">-</a>
+<div style="display:none" class="as_monster" id="as_trigger_condition_wrapper_0">
+<input type="text" id="as_trigger_condition_0">
 </div>
-<div id="monster_variable_change">
-フラグ立て
+フラグ立て 変数変更 <a class="show_put_flag" href="javascript:showPutFlag()">+</a><a style="display:none" class="hide_put_flag" href="javascript:hidePutFlag()">-</a>
+<div style="display:none" id="monster_variable_change">
+    フラグ
     <select id="flag_change_how">
         <option value="0"></option>
         <option value="1">増やす</option>
@@ -118,10 +131,11 @@ as<input type="text" id="as_trigger_condition_0">
 
 </div>
 <div type="text" id="monster_effect_move_to" style="display:none">
+移動先 <a class="show_to" href="javascript:showTo()">+</a><a style="display:none" class="hide_to" href="javascript:hideTo()">-</a>
+    <div class="to" style="display:none">
 as <input type="text" id="as_monster_effect_to">
 フィールドx位置<input id="monster_effect_field_x_to" >
 フィールドy位置<input id="monster_effect_field_y_to" >
-</div>
 <div id="monster_effect_place_to" style="display:none">
 <select id="monster_effect_place_1_to" class="monster_effect_place" onchange="getWhetherIsFieldTo('monster_effect',this.value)">
 </select>
@@ -130,6 +144,8 @@ as <input type="text" id="as_monster_effect_to">
 <option value="1">下に</option>
 <option value="2">ランダム</option>
 </select>
+</div>
+</div>
 </div>
 <input type="button" value="追加" onclick="putCondition('trigger_condition',3,'monster_effect')">
 </div>

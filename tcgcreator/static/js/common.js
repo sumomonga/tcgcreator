@@ -450,6 +450,66 @@
         $(".hide_card_exist").hide();
         $(".card_exist_box").hide();
         }
+    function showFieldXandY(){
+        $(".show_field_x_and_y").hide();
+        $(".hide_field_x_and_y").show();
+        $(".field_x_and_y").show();
+        }
+    function hideFieldXandY(){
+        $(".show_field_x_and_y").show();
+        $(".hide_field_x_and_y").hide();
+        $(".field_x_and_y").hide();
+        }
+    function showTo(){
+        $(".show_to").hide();
+        $(".hide_to").show();
+        $(".to").show();
+        }
+    function hidePutFlag(){
+        $(".show_to").show();
+        $(".hide_to").hide();
+        $(".to").hide();
+        }
+    function showPutFlag(){
+        $(".show_put_flag").hide();
+        $(".hide_put_flag").show();
+        $("#monster_variable_change").show();
+        }
+    function hidePutFlag(){
+        $(".show_put_flag").show();
+        $(".hide_put_flag").hide();
+        $("#monster_variable_change").hide();
+        }
+    function showAsMonster(){
+        $(".show_as_monster").hide();
+        $(".hide_as_monster").show();
+        $(".as_monster").show();
+        }
+    function hideAsMonster(){
+        $(".show_as_monster").show();
+        $(".hide_as_monster").hide();
+        $(".as_monster").hide();
+        }
+    function showEquation(){
+        $(".show_equation").hide();
+        $(".hide_equation").show();
+        $(".monster_equation").show();
+        }
+    function hideEquation(){
+        $(".show_equation").show();
+        $(".hide_equation").hide();
+        $(".monster_equation").hide();
+        }
+    function showExclude(){
+        $(".show_exclude").hide();
+        $(".hide_exclude").show();
+        $(".exclude").show();
+        }
+    function hideExclude(){
+        $(".show_exclude").show();
+        $(".hide_exclude").hide();
+        $(".exclude").hide();
+        }
     function showCustomMonsterCondition(){
         $(".show_custom_monster_condition").hide();
         $(".hide_custom_monster_condition").show();

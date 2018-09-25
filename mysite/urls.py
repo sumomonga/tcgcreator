@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^admin/tcgcreator/defaultdeck/$',views.default_deck,name='defaultdeck'),
     url(r'^admin/', admin.site.urls),
     url(r'^tcgcreator/', include('tcgcreator.urls')),
+#    url(r'^cell/', include('cell.urls')),
     url(r'^gameuser/', include('gameuser.urls')),
     url(r'^login/$', LoginView.as_view(), name='login'),
     url(r'^logout/$', LogoutView.as_view(), name='logout'),
