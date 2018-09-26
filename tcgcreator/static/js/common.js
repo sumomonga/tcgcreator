@@ -570,7 +570,7 @@
         $(".hide_place").hide();
         $(".trigger_condition_place_box").hide();
         }
-	function addPlace(place,i,j){
+	function addPlace(place,i,j,json=null){
 	$.ajax({
    'type': "POST",
    'url': "/tcgcreator/get_place_kind/",
@@ -586,6 +586,9 @@
 			$("#"+place+"_add_"+i).after('<select id="'+place+'_'+i+'" class="monster_condition_place" style=""> </select> <select id="'+place+'_add_'+i+'" onchange="addPlace(\''+place+'\','+(i+1)+','+')" class="monster_condition_place" style=""> <option value=""></option><option value="and"> <option value="or">または</option> </select>');
 			 $("#"+place+"_"+i).html(data);
 			}
+		}
+		if(json != null){
+		    putPlace(place,i,j,json)
 		}
 	}
 	});

@@ -784,7 +784,7 @@ def get_monster_condition(req):
     result = ""
     monster_variables = MonsterVariables.objects.all()
 
-    result+='フラグ<a class="show_flag" href="javascript:showFlag()">+</a><a style="display:none"  class="hide_flag" href="javascript:hideFlag()">-</a><div class="flag_box" style="display:none"><input type="text" id="flag">'
+    result+='フラグ<a class="show_flag" href="javascript:showFlag()">+</a><a style="display:none"  class="hide_flag" href="javascript:hideFlag()">-</a><div class="flag_box" style="display:none"><input type="text" id="flag'+add_j+add_i+'">'
     result+='<select id="flag_equal'+add_j+add_i+'"><option value="">全て</option><option value="=">=</option></select></div><br>'
     result+="モンスター名<a class=\"show_monster_name\" href=\"javascript:showMonsterName()\">+</a><a style=\"display:none\"  class=\"hide_monster_name\" href=\"javascript:hideMonsterName()\">-</a><div class=\"monster_name_box\" style=\"display:none\"><input type=\"text\" id=\"monster_name"+add_j+add_i+"_0\" onfocus=\"showMonsterNameEqual('"+str(j)+"_"+str(i)+"_0')\" >"
     result+='<select id="get_monster_name_equal'+add_j+add_i+'_0"><option value="">全て</option><option value="=">=</option><option value="like">含む</option></select>'

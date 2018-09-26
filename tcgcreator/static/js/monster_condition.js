@@ -265,8 +265,7 @@
                             $("#"+id+"_equation_0").html(data);
             putConditionVal(0,val);
             for(k=1;val["monster"][k] != undefined;k++){
-                addConditionPlaceAll(id,k);
-                putConditionVal(k,val);
+                addConditionPlaceAll(id,k-1,val);
             }
                          }
                     })
@@ -461,15 +460,18 @@
     }
     }
     */
+    function putPlace(place,m,l,json){
+        place = json["place"][l];
+        $("#"+id+"_place_add_"+m+"_"+l).val(place["and_or"]);
+        $("#"+id+"_place_"+m+"_"+l).val(place["det"]);
+    }
     function putConditionVal(m,val){
         json = {};
         var tmp = {};
         place = [];
         json = val["monster"][m]["monster"];
         for(l=0;json["place"][l]!= undefined;l++){
-        place = json["place"][l];
-        $("#"+id+"_place_add_"+m+"_"+l).val(place["and_or"]);
-        $("#"+id+"_place_"+m+"_"+l).val(place["det"]);
+            addPlace("trigger_condition_place",m,l,json);
         }
         $("#monster_place_id_"+m+"_1").val(json["place_id"]);
         $("#monster_unique_id_"+m+"_1").val(json["unique_id"]);
@@ -518,7 +520,7 @@
         $("#get_equation_kind_"+m).val(val["monster"][m]["equation"]["equation_kind"]);
         //$("#get_equation_number_"+m).val(val["monster"][m]["equation"]["equation_number"]);
         $("#"+id+"_and_or_"+m).val(val["monster"][m]["and_or"]);
-        $("#exclude_"+m).val(val["exclude"]);
+        $("#exclude_"+0).val(val["exclude"]);
         for(var field_x =0;val["field_x"][field_x] != undefined;field_x++){
             $("#"+id+"_field_x_"+m+"_"+field_x).val(val["field_x"][field_x]);
             $("#get_field_x_det_"+m+"_"+field_x).val(val["field_x_operator"][field_x]);
@@ -615,7 +617,7 @@
                 json["monster_name_kind"][j]["monster_name"] =$("#monster_name_"+m+"_"+i+"_"+j).val();
             }
         }
-        if($("#flag_equal_"+m+"_"+i).val() == ""){
+        if($("#flag_"+m+"_"+i).val() == ""){
             json["flag"] = "";
         }else{
             json["flag"] = {};
@@ -716,8 +718,8 @@
         if( and_or ==  undefined){
             and_or = "and"
         }
-        tmp["and_or"] = and_or
-        val["exclude"] = $("#exclude_"+m).val();
+        tmp["and_or"] = and_or;
+        val["exclude"] = $("#exclude_0").val();
         val["field_x"] = [];
         val["field_x_operator"] = [];
         val["field_x_and_or"] = [];
@@ -772,7 +774,7 @@
 
 
     }
-    function addConditionPlaceAll(id,i){
+    function addConditionPlaceAll(id,i,json=null){
         if(!(i==0 )){
             $("#"+id+"_all_add_button_"+i).remove();
         }else{
@@ -804,17 +806,18 @@
                             $("."+id+"_equation").show();
                             $("#"+id+"_equation_"+j).html(data);
                             displayConditionAll(id,j);
-                         }
-                    })
-                    $.ajax({
+                               $.ajax({
                          'type': "POST",
                          'url': "/tcgcreator/get_field_x_and_y/",
                          'data': "id="+id+"&c="+j,
                         'success': function(data){
                             $("."+id+"_field_x_and_y").show();
                             $("#"+id+"_field_x_and_y_"+j).html(data);
-                            var jyogai = '<br>除外 <a class="show_exclude" href="javascript:showExclude()">+</a><a style="display:none" class="hide_exclude" href="javascript:hideExclude()">-</a> <div style="display:none" class="exclude"> <input type="text" id="exclude_0" ></div>'
-                            $("#"+id+"_field_x_and_y_"+j).after(jyogai);
+                            if(json!= null){
+                                putConditionVal(i+1,json);
+                            }
+                         }
+                    })
                          }
                     })
                     }

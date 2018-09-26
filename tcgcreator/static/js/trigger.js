@@ -8,9 +8,12 @@
 		// $("#id_trigger_cost").after("<input type=\"button\" onclick=\"getTriggerCost()\" value=\"追加\">");
 		$("#id_trigger_monster").after("<input type=\"button\" onclick=\"getConditionKind('trigger_monster',0,100,0)\" value=\"追加\">");
 		$("#id_trigger_kind").after("<input type=\"button\" onclick=\"getTriggerChangeBefore()\" value=\"追加\"><input type=\"button\" onclick=\"deleteTriggerChange()\" value=\"削除\"><br>");
+		$(".submit-row").prepend('<input type="button" onclick="gotoDiagram()" value="diagram">');
 		getTriggerChange(0);
 	});
-		
+	function gotoDiagram(){
+	location.href = "../diagram"
+	}
 	function getTriggerCondition(){
 		$("#monster_condition").show();
 		$("#monster_condition").draggable();
