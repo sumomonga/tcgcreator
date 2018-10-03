@@ -306,6 +306,19 @@
                 $("#monster_variable_change_val_"+k).val(val["monster_variable_change_val"][k]);
             }
         }
+        if(val["relation_name"] != undefined && val["relation_name"][0] != undefined){
+            $("#relation_name_"+0).val(val["relation_name"][0]) ;
+            $("#relation_monster_"+0).val(val["relation_monster"][0]) ;
+            $("#relation_kind_"+0).val(val["relation_kind"][0]) ;
+            $("#relation_to_"+0).val(val["relation_to"][0]) ;
+            for(k=1;val["relation_name"][k]!= undefined;k++){
+	            addPutRelation(k-1);
+                $("#relation_name_"+k).val(val["relation_name"][k]) ;
+                $("#relation_monster_"+k).val(val["relation_monster"][k]) ;
+                $("#relation_kind_"+k).val(val["relation_kind"][k]) ;
+                $("#relation_to_"+k).val(val["relation_to"][k]) ;
+            }
+        }
         }
         });
         }else{
@@ -512,6 +525,16 @@
                 $("#custom_monster_variable_and_or_"+m+"_1_"+j+"_"+k).val();
             }
          }
+        if(json["relation"]!= undefined){
+        for(j=1;json["relation"][j-1] != undefined;j++){
+            for(k=0;json["relation"][j-1][k] != undefined;k++){
+                if(k==0){
+                    addRelation(m+'_1_'+j+'_'+k);
+                }
+                $("#relation_"+m+"_1_"+j+"_0").val(json["relation"][j-1][k]);
+            }
+         }
+       }
             $("#as_"+id+"_"+m).val(json["as_monster_condition"]);
         $("#min_equation_number_"+String(m)).val(val["monster"][m]["min_equation_number"]);
         $("#max_equation_number_"+String(m)).val(val["monster"][m]["max_equation_number"]);
@@ -551,10 +574,20 @@
         val["monster_variable_change_name"]=[];
         val["monster_variable_change_how"]=[];
         val["monster_variable_change_val"]=[];
+        val["relation_name"]=[];
+        val["relation_monster"]=[];
+        val["put_relation_kind"]=[];
+        val["put_relation_to"]=[];
         for(k=0;$("#monster_variable_change_name_"+k).val();k++){
         val["monster_variable_change_name"][k] = $("#monster_variable_change_name_"+k).val();
         val["monster_variable_change_how"][k] = parseInt($("#monster_variable_change_how_"+k).val());
         val["monster_variable_change_val"][k] = ($("#monster_variable_change_val_"+k).val());
+        }
+        for(k=0;$("#relation_name_"+k).val();k++){
+        val["relation_name"][k]=$("#relation_name_"+k).val();
+        val["relation_monster"][k]=$("#relation_monster_"+k).val();
+        val["put_relation_kind"][k]=$("#put_relation_kind_"+k).val();
+        val["put_relation_to"][k]=$("#put_relation_to_"+k).val();
         }
         }
         k=0;
@@ -705,6 +738,22 @@
             }
 
         }
+        json["relation"] = [];
+        json["relation_kind"] = [];
+        json["relation_to"] = [];
+        for(j=0;$("#relation_"+m+"_"+i+"_"+j+"_0").val();j++){
+            json["relation"][j] = [];
+            json["relation_kind"][j] = [];
+            json["relation_to"][j] = [];
+            for(k=0;$("#relation_"+m+"_"+i+"_"+j+"_"+k).length != 0;k++){
+            if($("#relation_"+m+"_"+i+"_"+j+"_"+k).length != 0){
+                json["relation"][j][k] = $("#relation_"+m+"_"+i+"_"+j+"_0").val();
+                json["relation_kind"][j][k] = $("#relation_kind_"+m+"_"+i+"_"+j+"_0").val();
+                json["relation_to"][j][k] = $("#relation_to_"+m+"_"+i+"_"+j+"_0").val();
+            }
+            }
+        }
+
         tmp["monster"]=json;
         }
             tmp["as_monster_condition"] = $("#as_"+id+"_"+m).val();

@@ -48,6 +48,17 @@
 		var result = '変数変更名<input type="text" id="monster_variable_change_name_'+i+'"> <select id="monster_variable_change_how_'+i+'"> <option value="0">増やす</option> <option value="1">減らす</option> <option value="2">指定</option> </select> <input type="text" id="monster_variable_change_val'+i+'" onfocus="showMonsterVariableEquation('+i+')"><input type="button" onclick="addMonsterVariableChange('+i+')" class="add_button_monster_variable_change" value="追加" id="add_button_monster_variable_change_'+i+'">';
 		$("#monster_variable_change").append(result);
 	}
+	function addPutRelation(i){
+		i++;
+		$(".add_button_put_relation").hide();
+		var result = 'リレーション名<input type="text" id="relation_name_'+String(i)+'">';
+        result+= 'リレーション<input type="text" id="relation_monster_'+String(i)+'">';
+        result+= 'リレーションタイプ<input type="text" id="put_relation_kind_'+String(i)+'">';
+        result+= '<input type="button" onclick="addPutRelation('+String(i)+')" class="add_button_put_relation" value="追加" id="add_relation_'+String(i)+'" class="add_relation">';
+        result+=' <select id="put_relation_to_'+i+'"> <option value="0">リレーション受ける</option> <option value="1">リレーションする</option></select>';
+		$("#put_relation").append(result);
+		addKindType("put_relation_kind_"+i,'put_relation_kind');
+	}
 	function putGlobalVariableToEquation(){
 		var editor =$("#equation_editor_det").val();
 	    var val = $("#equation_editor_global_val").val();
@@ -103,6 +114,33 @@
 		}
 		getGlobalValForEquation();
 		getPlaceForEquation();
+	}
+	function addRelation(id){
+		id = id.split("_");
+		var org = id[id.length-1];
+		var result="";
+		result="リレーション名<input type=\"text\" id=\"relation_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+id[3]+"\">";
+		result+="リレーションタイプ<input type=\"text\" id=\"relation_kind_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+id[3]+"\">";
+        result+="<select id=\"relation_to_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+id[3]+"\"><option value=\"0\">リレーション受ける</option><option value=\"1\">リレーションする</option></select>"
+		result+="<input value=\"追加\" type=\"button\" id=\"add_relation_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+String(parseInt(id[3]+1))+"\" onclick=\"addRelation('"+id[0]+"_"+id[1]+"_"+id[2]+"_"+String(parseInt(id[3]+1))+"')\">";
+		if(org == 0){
+		    $("#relation_add_"+id[0]+"_"+id[1]+"_"+id[2]+"_0").hide();
+		    $("#relation_add_"+id[0]+"_"+id[1]+"_"+id[2]+"_0").after(result);
+		}else{
+			$("#add_relation_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+String(parseInt(id[3]))).after(result);
+		}
+		addKindType("relation_kind_"+id[0]+"_"+id[1]+"_"+id[2]+"_"+id[3],'relation_kind');
+	}
+	function addKindType(id,id2){
+	$.ajax({
+   'type': "POST",
+   'url': "/tcgcreator/get_monster_kind/",
+   'data': "delete_flag=0&num=0&id="+id+"&id2="+id2,
+'success': function(data){
+			$("#"+id).after(data);
+	}
+	})
+
 	}
 	function addCustomMonsterCondition(id){
 		id = id.split("_");
@@ -510,6 +548,31 @@
         $(".hide_exclude").hide();
         $(".exclude").hide();
         }
+    var put_relation_flag = false;
+    function showPutRelation(){
+        $(".show_put_relation").hide();
+        $(".hide_put_relation").show();
+        $(".put_relation").show();
+        if(put_relation_flag== false){
+		    addKindType("put_relation_kind_"+0,'put_relation_kind');
+		    put_relation_flag = true;
+        }
+    }
+    function hidePutRelation(){
+        $(".show_put_relation").show();
+        $(".hide_put_relation").hide();
+        $(".put_relation").hide();
+    }
+    function showRelation(){
+        $(".show_relation").hide();
+        $(".hide_relation").show();
+        $(".relation_box").show();
+    }
+    function hideRelation(){
+        $(".show_relation").show();
+        $(".hide_relation").hide();
+        $(".relation_box").hide();
+    }
     function showCustomMonsterCondition(){
         $(".show_custom_monster_condition").hide();
         $(".hide_custom_monster_condition").show();
@@ -616,4 +679,19 @@
 		result+='<select id="get_field_y_and_or_'+i+'_'+next+'" > <option value=""></option> <option value="and">かつ</option> <option value="or">または</option> </select>';
 		result+='<input type="button" value="追加" id="add_field_y_'+i+'_'+next+'" onclick="addFieldX('+i+','+(next+1)+',\''+id+'\')"><br>'
 		$("#add_field_y_"+i+"_"+(next-1)).after(result);
+	}
+	function changeMonsterKindNum(id2,id,mode){
+		var tmp_str = "";
+		if(mode == 0){
+		        id = 'monster_kind';
+		        id2 = 'id_trigger_kind';
+		}
+		tmp_str = $("#"+id2).val();
+		if (tmp_str !=""){
+		    tmp_str+="_";
+
+		}
+		tmp_str+=$("#"+id+"-"+(0)).val();
+		$("#"+id2).val(tmp_str);
+
 	}

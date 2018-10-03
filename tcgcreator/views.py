@@ -212,10 +212,18 @@ def get_monster_kind(req):
     if not monster_kind:
         return HttpResponse('')
     num = req.POST["num"]
+    if "id" in req.POST:
+        id = req.POST["id"]
+        id2 = req.POST["id2"]
+        mode = "1"
+    else:
+        id = "monster_kind"
+        id2 = ""
+        mode = "0"
     tmp = []
     for tmp2 in monster_kind:
         tmp.append(tmp2.monster_effect_name)
-    result = '<select id="monster_kind-'+num+'" name="monster_kind-'+num+'" onchange="changeMonsterKindNum()">'
+    result = '<select id="'+id2+'-'+num+'" name="monster_kind-'+num+'" onchange="changeMonsterKindNum(\''+id+'\',\''+id2+'\','+mode+')">'
     i=1
     for tmp_val in tmp:
         result += '<option value="' + str(i)+ '">'+tmp_val+'</option>'
@@ -825,6 +833,9 @@ def get_monster_condition(req):
     result+="</div><br>"
     result+='カスタムモンスター変数条件<a class="show_custom_monster_condition" href="javascript:showCustomMonsterCondition()">+</a><a style="display:none"  class="hide_custom_monster_condition" href="javascript:hideCustomMonsterCondition()">-</a><div class="custom_monster_condition_box" style="display:none">'
     result+='<input type="button" value="カスタム追加" id="custom_add_'+str(j)+"_"+str(i)+'_0_0" class="custom_add" onclick="addCustomMonsterCondition(\''+str(j)+"_"+str(i)+'_0_0\')">'
+    result+='</div><br>'
+    result+='リレーション<a class="show_relation" href="javascript:showRelation()">+</a><a style="display:none"  class="hide_relation" href="javascript:hideRelation()">-</a><div class="relation_box" style="display:none">'
+    result+='<input type="button" value="リレーション追加" id="relation_add_'+str(j)+"_"+str(i)+'_0_0" class="relation_add" onclick="addRelation(\''+str(j)+"_"+str(i)+'_0_0\')">'
     result+='</div><br>'
     return HttpResponse(result)
 def get_monster_to(req):

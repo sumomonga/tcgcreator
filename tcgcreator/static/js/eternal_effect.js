@@ -80,15 +80,6 @@
 		$("#id_invalid_eternal_kind").val(tmp_str);
 
 	}
-	function changeMonsterKindNum(){
-		var tmp_str = "";
-		for(var i=0;i<monster_kind_i;i++){
-			tmp_str+=$("#monster_kind-"+(i)).val()+"_";;
-		}
-		tmp_str = tmp_str.substr(0,tmp_str.length-1);
-		$("#id_eternal_kind").val(tmp_str);
-
-	}
 	function getInvalidEternalEffectChange(num){
 
 	$.ajax({
@@ -107,20 +98,14 @@
 	})
 
 	}
-	function getEternalEffectChange(num){
+	function getEternalEffectChange(){
 	
 	$.ajax({
    'type': "POST",
    'url': "/tcgcreator/get_monster_kind/",
-   'data': "delete_flag=0&num="+num,
+   'data': "delete_flag=0&id2=id_eternal_kind&id=id_eternal_kind&id2=id_eternal_kind&num=0",
 'success': function(data){
-		if(num==0 ){
-			$("#id_eternal_kind").after(data);
-			monster_kind_i++;
-		}else{
-			$("#monster_kind-"+(num-1)).after(data);
-			monster_kind_i++;
-		}
+		$("#id_eternal_kind").after(data);
         } 
 	})
 		

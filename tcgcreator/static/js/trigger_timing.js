@@ -7,20 +7,14 @@ monster_kind_i = 0;
 		getTriggerTimingKindChange(0);
 		monster_kind_i=0;
 	}
-	function getTriggerTimingKindChange(num){
+	function getTriggerTimingKindChange(0){
 
 	$.ajax({
    'type': "POST",
    'url': "/tcgcreator/get_monster_kind/",
-   'data': "delete_flag=0&num="+num,
+   'data': "delete_flag=0&id2=id_kinds&id=id_kinds&num="+num,
 'success': function(data){
-		if(num==0 ){
 			$("#id_kinds").after(data);
-			monster_kind_i++;
-		}else{
-			$("#monster_kind-"+(num-1)).after(data);
-			monster_kind_i++;
-		}
         }
 	})
 
@@ -31,13 +25,4 @@ monster_kind_i = 0;
 	});
 	function getTriggerTimingKindChangeBefore(){
 		getTriggerTimingKindChange(monster_kind_i)
-	}
-	function changeMonsterKindNum(){
-		var tmp_str = "";
-		for(var i=0;i<monster_kind_i;i++){
-			tmp_str+=$("#monster_kind-"+(i)).val()+"_";;
-		}
-		tmp_str = tmp_str.substr(0,tmp_str.length-1);
-		$("#id_kinds").val(tmp_str);
-
 	}

@@ -7,7 +7,6 @@
 		$("#id_trigger_condition").after("<input type=\"button\" onclick=\"getConditionKind('trigger_condition',0,100,0)\" value=\"追加\">");
 		// $("#id_trigger_cost").after("<input type=\"button\" onclick=\"getTriggerCost()\" value=\"追加\">");
 		$("#id_trigger_monster").after("<input type=\"button\" onclick=\"getConditionKind('trigger_monster',0,100,0)\" value=\"追加\">");
-		$("#id_trigger_kind").after("<input type=\"button\" onclick=\"getTriggerChangeBefore()\" value=\"追加\"><input type=\"button\" onclick=\"deleteTriggerChange()\" value=\"削除\"><br>");
 		$(".submit-row").prepend('<input type="button" onclick="gotoDiagram()" value="diagram">');
 		getTriggerChange(0);
 	});
@@ -42,29 +41,14 @@
 		getTriggerChange(0);
 		monter_kind_i=0;
 	}
-	function changeMonsterKindNum(){
-		var tmp_str = "";
-		for(var i=0;i<monter_kind_i;i++){
-			tmp_str+=$("#monster_kind-"+(i)).val()+"_";;
-		}
-		tmp_str = tmp_str.substr(0,tmp_str.length-1);
-		$("#id_trigger_kind").val(tmp_str);
-
-	}
-	function getTriggerChange(num){
+	function getTriggerChange(){
 	
 	$.ajax({
    'type': "POST",
    'url': "/tcgcreator/get_monster_kind/",
-   'data': "delete_flag=0&num="+num,
+   'data': "delete_flag=0&id=id_trigger_kind&id2=id_trigger_kind&num=0",
 'success': function(data){
-		if(num==0 ){
 			$("#id_trigger_kind").after(data);
-			monter_kind_i++;
-		}else{
-			$("#monster_kind-"+(num-1)).after(data);
-			monter_kind_i++;
-		}
         } 
 	})
 		

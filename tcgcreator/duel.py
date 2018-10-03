@@ -3222,6 +3222,13 @@ class DuelObj:
                 effect_kind = monster_effect.monster_effect_kind
                 self.change_monster_variable(monster_effect.monster_effect.monster_effect,effect_kind)
                 monster_effect= monster_effect.monster_effect_next
+            elif monster_effect_unwrap.monster_effect_val == 25:
+                log_tmp = self.write_log(monster_effect.log,user)
+                duel.log_turn += log_tmp
+                duel.log += log_tmp
+                effect_kind = monster_effect.monster_effect_kind
+                self.change_monster_relation(monster_effect.monster_effect.monster_effect,effect_kind)
+                monster_effect= monster_effect.monster_effect_next
             elif monster_effect_unwrap.monster_effect_val == 10:
                 log_tmp = self.write_log(monster_effect.log,user)
                 duel.log_turn += log_tmp
@@ -3720,6 +3727,1231 @@ class DuelObj:
         duel.global_variable = json.dumps(variable)
         return change_val
 
+    def change_monster_relation(self,monster_effect,effect_kind,cost =0):
+        duel = self.duel
+        chain_user = json.loads(duel.chain_user)
+        if cost == 0:
+            chain_user = chain_user[str(duel.chain-1)]
+        else:
+            chain_user = chain_user[str(duel.chain)]
+        room_number = self.room_number
+        field = self.field
+        monster_effect = json.loads(monster_effect)
+        monster_effect_monster = monster_effect["monster"]
+        for monster_effect_det in monster_effect_monster:
+            if not "as_monster_condition" in monster_effect_det:
+                continue
+            if monster_effect_det["as_monster_condition"] == "":
+               continue
+            as_monsters = monster_effect_det["as_monster_condition"]
+            if not isinstance(as_monsters,list):
+                tmp_monster = []
+                tmp_monster.append(as_monsters)
+                as_monsters = tmp_monster
+            for as_monster in as_monsters:
+                if as_monster[0] == "~":
+                    tmp = self.cost
+                    tmp = tmp[str(int(duel.chain))]
+                    place1 = tmp[as_monster[1:]]
+                elif as_monster[0] == "%":
+                    tmp = self.timing_mess
+                    place1 = tmp[as_monster[1:]]
+                else:
+                    tmp = self.mess
+                    tmp = tmp[str(int(duel.chain-1))]
+                    place1 = tmp[as_monster]
+                for place2 in place1:
+                    place = place2["place"]
+                    if place == "field":
+                        x = int(place2["x"])
+                        y = int(place2["y"])
+                        field = self.field
+                        if cost ==0:
+                            if( "place_id" in place2):
+                                place_id = place2["place_id"]
+                                if(field[x][y]["det"]["place_unique_id"] != place_id):
+                                    return "error"
+                                if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,1):
+                                    continue;
+                                for index in range(len(monster_effect["relation_name"])):
+                                    relation_name = monster_effect["relation_name"][index]
+                                    relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                    relation_kind = monster_effect["relation_kind"][index]
+                                    relation_to = monster_effect["relation_kind"][index]
+                                    if not "rel" in field[x][y]:
+                                        field[x][y]["rel"] = {}
+                                    if not relation_name in field[x][y]["rel"]:
+                                        field[x][y][relation_name] = {}
+                                    if not "m_id" in  field[x][y][relation_name]:
+                                        field[x][y][relation_name]["monster"] = []
+                                    for monster in relation_monster:
+                                        field[x][y]["rel"][relation_name]["monster"].append(monster)
+                                    field[x][y]["rel"][relation_name]["kind"] = relation_kind
+                                    field[x][y]["rel"][relation_name]["to"] = relation_to
+                                    if relation_to =="0":
+                                         relation_from = 1   
+                                    elif relation_to =="1":
+                                         relation_from = 0   
+                                    self.set_relation(relation_name,relation_monster,relation_kind,relation_from,field[x][y]["place_unique_id"],"field",x,y,0,chain_user)
+                                self.field = field
+                                continue;
+                        else:
+                            place_id = place2["place_id"]
+                            if(field[x][y]["det"]["place_unique_id"] != place_id):
+                                return "error"
+                            if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,1):
+                                continue;
+                            cost_result = self.cost_result
+                            if not "rel" in cost_result:
+                                cost_result["relation"] = {}
+
+                            if not "field" in cost_result["relation"]:
+                                cost_result["relation"]["field"] = []
+                            for index in range(len(monster_effect["monster_variable_change_how"])):
+                                relation_name = monster_effect["relation_name"][index]
+                                relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                relation_kind = monster_effect["relation_kind"][index]
+                                relation_to = monster_effect["relation_kind"][index]
+                                cost_result_tmp["relation_name"]= relation_name
+                                cost_result_tmp["relation_monster"]= relation_monster
+                                cost_result_tmp["relation_kind"]= relation_kind
+                                cost_result_tmp["relation_to"]= relation_to
+                                cost_result_tmp["place_id"]= fielc[x][y]["place_unique_id"]
+                                cost_result["relation"]["field"].append(cost_result_tmp)
+                            self.cost_result = cost_result
+                            continue;
+
+                    mine_or_other = place2["mine_or_other"]
+                    user = place2["user"]
+                    deck_id = place2["deck_id"]
+                    place_id = place2["place_id"]
+                    if (self.user == chain_user and  mine_or_other == "1") or (chain_user != self.user and mine_or_other == "2"):
+                        mine_or_other = "1"
+                    elif (self.user != chain_user and  mine_or_other == "1") or (chain_user == self.user and mine_or_other == "2"):
+                        mine_or_other = "2"
+                    else:
+                        mine_or_other = "3"
+                    if place == "deck":
+                        if mine_or_other == "1":
+                            tmp = self.decks[deck_id]["mydeck"]
+                        elif mine_or_other == "2":
+                            tmp = self.decks[deck_id]["otherdeck"]
+                        else:
+                            tmp = self.decks[deck_id]["commondeck"]
+                        user_decks = tmp
+                        for index in range(len(user_decks)):
+                            if place_id== user_decks[index]["place_unique_id"]:
+                                if cost == 0:
+                                    effect_flag = False
+                                    if not self.check_not_effected(user_decks[index],chain_user,effect_kind,"deck",deck_id,0,0,1):
+                                        for index2 in range(len(monster_effect["relation_name"])):
+                                            relation_name = monster_effect["relation_name"][index2]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                            relation_kind = monster_effect["relation_kind"][index2]
+                                            relation_to = monster_effect["relation_kind"][index2]
+                                            if not "rel" in user_decks[index]:
+                                                user_decks[index]["rel"] = {}
+                                            if not relation_name in user_decks[index]["rel"]:
+                                                user_decks[index][relation_name] = {}
+                                            if not "m_id" in  user_decks[index][relation_name]:
+                                                user_decks[index][relation_name]["monster"] = []
+                                            for monster in relation_monster:
+                                                user_decks[index]["rel"][relation_name]["monster"].append(monster)
+                                                user_decks[index]["rel"][relation_name]["kind"] = relation_kind
+                                                user_decks[index]["rel"][relation_name]["to"] = relation_to
+                                                if relation_to =="0":
+                                                    relation_from = 1
+                                                elif relation_to =="1":
+                                                    relation_from = 0
+                                                self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_decks[index]["place_unique_id"],"deck",0,0,chain_user)
+                                    if mine_or_other == "1":
+                                        self.decks[deck_id]["mydeck"] =user_decks
+                                    elif mine_or_other == "2":
+                                        self.decks[deck_id]["otherdeck"] =user_decks
+                                    else:
+                                        self.decks[deck_id]["commondeck"] =user_decks
+                                else:
+                                    cost_result = self.cost_result
+                                    if not self.check_not_effected(user_decks[index],chain_user,effect_kind,"deck",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "deck" in cost_result["relation"]:
+                                            cost_result["relation"]["deck"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_hands[index]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["deck"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+
+
+                    if place == "grave":
+                        if mine_or_other == "1":
+                            tmp = self.graves[deck_id]["mygrave"]
+                        elif mine_or_other == "2":
+                            tmp = self.graves[deck_id]["othergrave"]
+                        else:
+                            tmp = self.graves[deck_id]["commongrave"]
+                        user_graves = tmp
+                        for index in range(len(user_graves)):
+                            if place_id== user_graves[index]["place_unique_id"]:
+                                if cost == 0:
+                                    effect_flag = False
+                                    if not self.check_not_effected(user_graves[index],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                        for index2 in range(len(monster_effect["relation_name"])):
+                                            relation_name = monster_effect["relation_name"][index2]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                            relation_kind = monster_effect["relation_kind"][index2]
+                                            relation_to = monster_effect["relation_kind"][index2]
+                                            if not "rel" in user_graves[index]:
+                                                user_graves[index]["rel"] = {}
+                                            if not relation_name in user_graves[index]["rel"]:
+                                                user_graves[index][relation_name] = {}
+                                            if not "m_id" in  user_graves[index][relation_name]:
+                                                user_graves[index][relation_name]["monster"] = []
+                                            for monster in relation_monster:
+                                                user_graves[index]["rel"][relation_name]["monster"].append(monster)
+                                            user_graves[index]["rel"][relation_name]["kind"] = relation_kind
+                                            user_graves[index]["rel"][relation_name]["to"] = relation_to
+                                            if relation_to =="0":
+                                                relation_from = 1
+                                            elif relation_to =="1":
+                                                relation_from = 0
+                                            self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_graves[index]["place_unique_id"],"grave",0,0,chain_user)
+                                    if mine_or_other == "1":
+                                        self.graves[deck_id]["mygrave"] =user_graves
+                                    elif mine_or_other == "2":
+                                        self.graves[deck_id]["othergrave"] =user_graves
+                                    else:
+                                        self.graves[deck_id]["commongrave"] =user_graves
+                                else:
+                                     cost_result = self.cost_result
+                                     if not self.check_not_effected(user_graves[index],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "grave" in cost_result["relation"]:
+                                            cost_result["relation"]["grave"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_graves[index]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["grave"].append(cost_result_tmp)
+                                        self.cost_result = cost_result
+
+                    if place == "hand":
+                        if mine_or_other == "1":
+                            tmp = self.hands[deck_id]["myhand"]
+                        elif mine_or_other == "2":
+                            tmp = self.hands[deck_id]["otherhand"]
+                        else:
+                            tmp = self.hands[deck_id]["commonhand"]
+                        user_hands = tmp
+                        for index in range(len(user_hands)):
+                            if place_id== user_hands[index]["place_unique_id"]:
+                                if cost == 0:
+                                    effect_flag = False
+                                    if not self.check_not_effected(user_hands[index],chain_user,effect_kind,"hand",deck_id,0,0,1):
+                                        for index2 in range(len(monster_effect["relation_name"])):
+                                            relation_name = monster_effect["relation_name"][index2]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                            relation_kind = monster_effect["relation_kind"][index2]
+                                            relation_to = monster_effect["relation_kind"][index2]
+                                            if not "rel" in user_hands[index]:
+                                                user_hands[index]["rel"] = {}
+                                            if not relation_name in user_hands[index]["rel"]:
+                                                user_hands[index][relation_name] = {}
+                                            if not "m_id" in  user_hands[index][relation_name]:
+                                                user_hands[index][relation_name]["monster"] = []
+                                            for monster in relation_monster:
+                                                user_hands[index]["rel"][relation_name]["monster"].append(monster)
+                                            user_hands[index]["rel"][relation_name]["kind"] = relation_kind
+                                            user_hands[index]["rel"][relation_name]["to"] = relation_to
+                                            if relation_to =="0":
+                                                relation_from = 1
+                                            elif relation_to =="1":
+                                                relation_from = 0
+                                            self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_hands[index]["place_unique_id"],"hand",0,0,chain_user)
+                                    if mine_or_other == "1":
+                                        self.hands[deck_id]["myhand"] =user_hands
+                                    elif mine_or_other == "2":
+                                        self.hands[deck_id]["otherhand"] =user_hands
+                                    else:
+                                        self.hands[deck_id]["commonhand"] =user_hands
+                                else:
+                                     cost_result = self.cost_result
+                                     if not self.check_not_effected(user_hands[index],chain_user,effect_kind,"hand",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "hand" in cost_result["relation"]:
+                                            cost_result["relation"]["hand"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_hands[index]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["hand"].append(cost_result_tmp)
+                                        self.cost_result = cost_result
+
+        field=self.field
+        for monster_effect_det2 in monster_effect_monster:
+            monster_effect_det = monster_effect_det2["monster"]
+            field_tmp = []
+            tmp_deck = None
+            for place in monster_effect_det["place"]:
+                place_tmp = place["det"].split("_")
+                deck_id = int(place_tmp[1])
+                if(place_tmp[0] == "deck" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_deck_with_effect(self.decks[deck_id]["mydeck"],monster_effect_det,effect_kind,exclude,effect_user,"deck",deck_id,0,0,mine_or_other3)
+                            org_deck = self.decks[deck_id]["mydeck"]
+                        elif mine_or_other2 == 2:
+                            tmp_deck = self.get_deck_with_effect(self.decks[deck_id]["otherdeck"],monster_effect_det,effect_kind,exclude,effect_user,"deck",deck_id,0,0,mine_or_other3)
+                            org_deck = self.decks[deck_id]["otherdeck"]
+                        else:
+                            tmp_deck = self.get_deck_with_effect(self.decks[deck_id]["commondeck"],monster_effect_det,effect_kind,exclude,effect_user,"deck",deck_id,0,0,mine_or_other3)
+                            org_deck = self.decks[deck_id]["commondeck"]
+                        user_decks = org_deck
+
+                    if not tmp_deck:
+                        return
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_decks)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_decks[index3],chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other):
+                                if cost == 0:
+                                    for index2 in range(len(monster_effect["relation_name"])):
+                                        relation_name = monster_effect["relation_name"][index2]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                        relation_kind = monster_effect["relation_kind"][index2]
+                                        relation_to = monster_effect["relation_kind"][index2]
+                                        if not "rel" in user_decks[index]:
+                                            user_decks[index3]["rel"] = {}
+                                        if not relation_name in user_decks[index]["rel"]:
+                                            user_decks[index3][relation_name] = {}
+                                        if not "m_id" in  user_decks[index][relation_name]:
+                                            user_decks[index3][relation_name]["monster"] = []
+                                        for monster in relation_monster:
+                                            user_decks[index3]["rel"][relation_name]["monster"].append(monster)
+                                            user_decks[index3]["rel"][relation_name]["kind"] = relation_kind
+                                            user_decks[index3]["rel"][relation_name]["to"] = relation_to
+                                            if relation_to =="0":
+                                                relation_from = 1
+                                            elif relation_to =="1":
+                                                relation_from = 0
+                                            self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_decks[index3]["place_unique_id"],"deck",0,0,chain_user)
+                                    else:
+                                        cost_result = self.cost_result
+                                        if not self.check_not_effected(user_decks[index3],chain_user,effect_kind,"deck",deck_id,0,0,1):
+                                            if not "rel" in cost_result:
+                                                cost_result["relation"] = {}
+                                            if not "deck" in cost_result["relation"]:
+                                                cost_result["relation"]["deck"] = []
+                                            relation_name = monster_effect["relation_name"][index]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                            relation_kind = monster_effect["relation_kind"][index]
+                                            relation_to = monster_effect["relation_kind"][index]
+                                            cost_result_tmp["relation_name"]= relation_name
+                                            cost_result_tmp["relation_monster"]= relation_monster
+                                            cost_result_tmp["relation_kind"]= relation_kind
+                                            cost_result_tmp["relation_to"]= relation_to
+                                            cost_result_tmp["place_id"]= user_decks[index3]["place_unique_id"]
+                                            cost_result_tmp["user"]= int(place_tmp[2])
+                                            cost_result_tmp["deck_id"]= deck_id
+                                            cost_result["relation"]["deck"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                        if cost == 0:
+                            if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                                mine_or_other2 = 1
+                            elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                                mine_or_other2 = 2
+                            else:
+                                mine_or_other2 =3
+                            if mine_or_other2 == 1:
+                                self.decks[deck_id]["mydeck"] =user_decks
+                            elif mine_or_other2 == 2:
+                                self.decks[deck_id]["otherdeck"] =user_decks
+                            else:
+                                self.decks[deck_id]["commondeck"] =user_decks
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                    for index2 in range(len(user_decks[range_i]["variables"])):
+                        effect_flag = False
+                        if not self.check_not_effected(user_decks[range_i],chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other):
+                            for index2 in monster_effect["relation_name"]:
+                                if cost == 0:
+                                    relation_name = monster_effect["relation_name"][index2]
+                                    relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                    relation_kind = monster_effect["relation_kind"][index2]
+                                    relation_to = monster_effect["relation_kind"][index2]
+                                    if not "rel" in user_decks[index]:
+                                        user_decks[range_i]["rel"] = {}
+                                    if not relation_name in user_decks[index]["rel"]:
+                                        user_decks[range_i][relation_name] = {}
+                                    if not "m_id" in  user_decks[index][relation_name]:
+                                        user_decks[range_i][relation_name]["monster"] = []
+                                    for monster in relation_monster:
+                                        user_decks[range_i]["rel"][relation_name]["monster"].append(monster)
+                                        user_decks[range_i]["rel"][relation_name]["kind"] = relation_kind
+                                        user_decks[range_i]["rel"][relation_name]["to"] = relation_to
+                                        if relation_to =="0":
+                                            relation_from = 1
+                                        elif relation_to =="1":
+                                            relation_from = 0
+                                        self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_decks[range_i]["place_unique_id"],"deck",0,0,chain_user)
+                                else:
+                                    cost_result = self.cost_result
+                                    if not self.check_not_effected(user_decks[range_i],chain_user,effect_kind,"deck",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "deck" in cost_result["relation"]:
+                                            cost_result["relation"]["deck"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_decks[range_i]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["deck"].append(cost_result_tmp)
+                                        cost_result = self.cost_result
+
+                    if cost ==0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.decks[deck_id]["mydeck"] =user_decks
+                        elif mine_or_other2 == 2:
+                            self.decks[deck_id]["otherdeck"] =user_decks
+                        else:
+                            self.decks[deck_id]["commondeck"] =user_decks
+                elif(place_tmp[0] == "grave" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_grave_with_effect(self.graves[deck_id]["mygrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["mygrave"]
+                        elif mine_or_other2 == 2:
+                            tmp_grave = self.get_grave_with_effect(self.graves[deck_id]["othergrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["othergrave"]
+                        else:
+                            tmp_grave = self.get_grave_with_effect(self.graves[deck_id]["commongrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["commongrave"]
+                        user_graves = org_grave
+
+                    if not tmp_grave:
+                        return
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_graves)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_graves[index3],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                                if cost == 0:
+                                    for index2 in range(len(monster_effect["relation_name"])):
+                                        relation_name = monster_effect["relation_name"][index2]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                        relation_kind = monster_effect["relation_kind"][index2]
+                                        relation_to = monster_effect["relation_kind"][index2]
+                                        if not "rel" in user_graves[index]:
+                                            user_graves[index3]["rel"] = {}
+                                        if not relation_name in user_graves[index]["rel"]:
+                                            user_graves[index3][relation_name] = {}
+                                        if not "m_id" in  user_graves[index][relation_name]:
+                                            user_graves[index3][relation_name]["monster"] = []
+                                        for monster in relation_monster:
+                                            user_graves[index3]["rel"][relation_name]["monster"].append(monster)
+                                            user_graves[index3]["rel"][relation_name]["kind"] = relation_kind
+                                            user_graves[index3]["rel"][relation_name]["to"] = relation_to
+                                            if relation_to =="0":
+                                                relation_from = 1
+                                            elif relation_to =="1":
+                                                relation_from = 0
+                                            self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_graves[index3]["place_unique_id"],"grave",0,0,chain_user)
+                                    else:
+                                        cost_result = self.cost_result
+                                        if not self.check_not_effected(user_graves[index3],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                            if not "rel" in cost_result:
+                                                cost_result["relation"] = {}
+                                            if not "grave" in cost_result["relation"]:
+                                                cost_result["relation"]["grave"] = []
+                                            relation_name = monster_effect["relation_name"][index]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                            relation_kind = monster_effect["relation_kind"][index]
+                                            relation_to = monster_effect["relation_kind"][index]
+                                            cost_result_tmp["relation_name"]= relation_name
+                                            cost_result_tmp["relation_monster"]= relation_monster
+                                            cost_result_tmp["relation_kind"]= relation_kind
+                                            cost_result_tmp["relation_to"]= relation_to
+                                            cost_result_tmp["place_id"]= user_graves[index3]["place_unique_id"]
+                                            cost_result_tmp["user"]= int(place_tmp[2])
+                                            cost_result_tmp["grave_id"]= grave_id
+                                            cost_result["relation"]["grave"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                        if cost == 0:
+                            if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                                mine_or_other2 = 1
+                            elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                                mine_or_other2 = 2
+                            else:
+                                mine_or_other2 =3
+                            if mine_or_other2 == 1:
+                                self.graves[deck_id]["mygrave"] =user_graves
+                            elif mine_or_other2 == 2:
+                                self.graves[deck_id]["othergrave"] =user_graves
+                            else:
+                                self.graves[deck_id]["commongrave"] =user_graves
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                    for index2 in range(len(user_graves[range_i]["variables"])):
+                        effect_flag = False
+                        if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                            for index2 in monster_effect["relation_name"]:
+                                if cost == 0:
+                                    relation_name = monster_effect["relation_name"][index2]
+                                    relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                    relation_kind = monster_effect["relation_kind"][index2]
+                                    relation_to = monster_effect["relation_kind"][index2]
+                                    if not "rel" in user_graves[index]:
+                                        user_graves[range_i]["rel"] = {}
+                                    if not relation_name in user_graves[index]["rel"]:
+                                        user_graves[range_i][relation_name] = {}
+                                    if not "m_id" in  user_graves[index][relation_name]:
+                                        user_graves[range_i][relation_name]["monster"] = []
+                                    for monster in relation_monster:
+                                        user_graves[range_i]["rel"][relation_name]["monster"].append(monster)
+                                    user_graves[range_i]["rel"][relation_name]["kind"] = relation_kind
+                                    user_graves[range_i]["rel"][relation_name]["to"] = relation_to
+                                    if relation_to =="0":
+                                        relation_from = 1
+                                    elif relation_to =="1":
+                                        relation_from = 0
+                                    self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_graves[range_i]["place_unique_id"],"grave",0,0,chain_user)
+                                else:
+                                    cost_result = self.cost_result
+                                    if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "grave" in cost_result["relation"]:
+                                            cost_result["relation"]["grave"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_graves[range_i]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["grave"].append(cost_result_tmp)
+                                        cost_result = self.cost_result
+
+                    if cost ==0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.graves[deck_id]["mygrave"] =user_graves
+                        elif mine_or_other2 == 2:
+                            self.graves[deck_id]["othergrave"] =user_graves
+                        else:
+                            self.graves[deck_id]["commongrave"] =user_graves
+                elif(place_tmp[0] == "grave" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_grave_with_effect(self.graves[deck_id]["mygrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["mygrave"]
+                        elif mine_or_other2 == 2:
+                            tmp_deck = self.get_grave_with_effect(self.graves[deck_id]["othergrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["othergrave"]
+                        else:
+                            tmp_deck = self.get_grave_with_effect(self.graves[deck_id]["commongrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["commongrave"]
+                        user_graves = org_grave
+                    if not tmp:
+                        return None
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_graves)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_graves[index3],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                                for index2 in range(len(monster_effect["monster_variable_change_how"])):
+                                    variable_name = monster_effect["monster_variable_change_name"][index2]
+                                    if cost == 0:
+                                        if monster_effect["monster_variable_change_how"][index2] == 0:
+                                            user_graves[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) + int( user_graves[index3]["variables"][variable_name]["value"] ))
+                                        if monster_effect["monster_variable_change_how"][index2] == 1:
+                                            user_graves[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( user_graves[index3]["variables"][variable_name]["value"] ))
+                                        if monster_effect["monster_variable_change_how"][index2] == 2:
+                                            user_graves[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) )
+                                    else:
+                                        cost_result = self.cost_result
+                                        cost_result_tmp = {}
+                                        cost_result_tmp["change_variable"]= monster_effect["monster_variable_change_name"][index4]
+                                        cost_result_tmp["change_variable_val"]=monster_effect["monster_variable_change_val"][index4]
+                                        cost_result_tmp["change_variable_how"]=monster_effect["monster_variable_change_how"][index4]
+                                        cost_result_tmp["place_id"]= user_graves[index3]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["grave_id"]= deck_id
+                                        cost_result["variable"]["deck"].append(cost_result_tmp)
+                                        self.cost_result =cost_result
+                    if cost == 0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.decks[deck_id]["mydeck"] =user_decks
+                        elif mine_or_other2 == 2:
+                            self.decks[deck_id]["otherdeck"] =user_decks
+                        else:
+                            self.decks[deck_id]["commondeck"] =user_decks
+                        if mine_or_other2 == 1:
+                            self.graves[deck_id]["mygrave"] =user_graves
+                        elif mine_or_other2 == 2:
+                            self.graves[deck_id]["othergrave"] =user_graves
+                        else:
+                            self.graves[deck_id]["commongrave"] =user_graves
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                        del tmp_deck[0]
+                        for tmpdecktmp in range(len(tmp_deck)):
+                            tmp_deck[tmpdecktmp]-=1
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                        tmp_deck.pop()
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                        tmp_deck.pop(rand_i)
+                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
+                            tmp_deck[tmpdecktmp+rand_i]-=1
+                    effect_flag = False
+                    if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                        for index2 in range(len(monster_effect["monster_variable_change_how"])):
+                            variable_name = monster_effect["monster_variable_change_name"][index2]
+                            if cost ==0:
+                                if monster_effect["monster_variable_change_how"][index2] == 0:
+                                    user_graves[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) + int( user_graves[range_i]["variables"][variable_name]["value"] ))
+                                if monster_effect["monster_variable_change_how"][index2] == 1:
+                                    user_graves[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( user_graves[range_i]["variables"][variable_name]["value"] ))
+                                if monster_effect["monster_variable_change_how"][index2] == 2:
+                                    user_graves[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) )
+                            else:
+                                cost_result = self.cost_result
+                                cost_result_tmp = {}
+                                cost_result_tmp["change_variable"]= monster_effect["monster_variable_change_name"][index2]
+                                cost_result_tmp["change_variable_val"]=monster_effect["monster_variable_change_val"][index2]
+                                cost_result_tmp["change_variable_how"]=monster_effect["monster_variable_change_how"][index2]
+                                cost_result_tmp["place_id"]= user_graves[range_i]["place_unique_id"]
+                                cost_result_tmp["user"]= int(place_tmp[2])
+                                cost_result_tmp["grave_id"]= deck_id
+                                cost_result["variable"]["grave"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                    if cost == 0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.graves[deck_id]["mygrave"] =user_graves
+                        elif mine_or_other2 == 2:
+                            self.graves[deck_id]["othergrave"] =user_graves
+                        else:
+                            self.graves[deck_id]["commongrave"] =user_graves
+                elif(place_tmp[0] == "grave" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_grave_with_effect(self.graves[deck_id]["mygrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["mygrave"]
+                        elif mine_or_other2 == 2:
+                            tmp_grave = self.get_grave_with_effect(self.graves[deck_id]["othergrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["othergrave"]
+                        else:
+                            tmp_grave = self.get_grave_with_effect(self.graves[deck_id]["commongrave"],monster_effect_det,effect_kind,exclude,effect_user,"grave",deck_id,0,0,mine_or_other3)
+                            org_grave = self.graves[deck_id]["commongrave"]
+                        user_graves = org_grave
+
+                    if not tmp_grave:
+                        return
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_graves)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_graves[index3],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                                if cost == 0:
+                                    for index2 in range(len(monster_effect["relation_name"])):
+                                        relation_name = monster_effect["relation_name"][index2]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                        relation_kind = monster_effect["relation_kind"][index2]
+                                        relation_to = monster_effect["relation_kind"][index2]
+                                        if not "rel" in user_graves[index]:
+                                            user_graves[index3]["rel"] = {}
+                                        if not relation_name in user_graves[index]["rel"]:
+                                            user_graves[index3][relation_name] = {}
+                                        if not "m_id" in  user_graves[index][relation_name]:
+                                            user_graves[index3][relation_name]["monster"] = []
+                                        for monster in relation_monster:
+                                            user_graves[index3]["rel"][relation_name]["monster"].append(monster)
+                                        user_graves[index3]["rel"][relation_name]["kind"] = relation_kind
+                                        user_graves[index3]["rel"][relation_name]["to"] = relation_to
+                                        if relation_to =="0":
+                                            relation_from = 1
+                                        elif relation_to =="1":
+                                            relation_from = 0
+                                        self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_graves[index3]["place_unique_id"],"grave",0,0,chain_user)
+                                    else:
+                                        cost_result = self.cost_result
+                                        if not self.check_not_effected(user_graves[index3],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                            if not "rel" in cost_result:
+                                                cost_result["relation"] = {}
+                                            if not "grave" in cost_result["relation"]:
+                                                cost_result["relation"]["grave"] = []
+                                            relation_name = monster_effect["relation_name"][index]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                            relation_kind = monster_effect["relation_kind"][index]
+                                            relation_to = monster_effect["relation_kind"][index]
+                                            cost_result_tmp["relation_name"]= relation_name
+                                            cost_result_tmp["relation_monster"]= relation_monster
+                                            cost_result_tmp["relation_kind"]= relation_kind
+                                            cost_result_tmp["relation_to"]= relation_to
+                                            cost_result_tmp["place_id"]= user_graves[index3]["place_unique_id"]
+                                            cost_result_tmp["user"]= int(place_tmp[2])
+                                            cost_result_tmp["grave_id"]= grave_id
+                                            cost_result["relation"]["grave"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                        if cost == 0:
+                            if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                                mine_or_other2 = 1
+                            elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                                mine_or_other2 = 2
+                            else:
+                                mine_or_other2 =3
+                            if mine_or_other2 == 1:
+                                self.graves[deck_id]["mygrave"] =user_graves
+                            elif mine_or_other2 == 2:
+                                self.graves[deck_id]["othergrave"] =user_graves
+                            else:
+                                self.graves[deck_id]["commongrave"] =user_graves
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                    for index2 in range(len(user_graves[range_i]["variables"])):
+                        effect_flag = False
+                        if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
+                            for index2 in monster_effect["relation_name"]:
+                                if cost == 0:
+                                    relation_name = monster_effect["relation_name"][index2]
+                                    relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                    relation_kind = monster_effect["relation_kind"][index2]
+                                    relation_to = monster_effect["relation_kind"][index2]
+                                    if not "rel" in user_graves[index]:
+                                        user_graves[range_i]["rel"] = {}
+                                    if not relation_name in user_graves[index]["rel"]:
+                                        user_graves[range_i][relation_name] = {}
+                                    if not "m_id" in  user_graves[index][relation_name]:
+                                        user_graves[range_i][relation_name]["monster"] = []
+                                    for monster in relation_monster:
+                                        user_graves[range_i]["rel"][relation_name]["monster"].append(monster)
+                                    user_graves[range_i]["rel"][relation_name]["kind"] = relation_kind
+                                    user_graves[range_i]["rel"][relation_name]["to"] = relation_to
+                                    if relation_to =="0":
+                                        relation_from = 1
+                                    elif relation_to =="1":
+                                        relation_from = 0
+                                    self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_graves[range_i]["place_unique_id"],"grave",0,0,chain_user)
+                                else:
+                                    cost_result = self.cost_result
+                                    if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "grave" in cost_result["relation"]:
+                                            cost_result["relation"]["grave"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_graves[range_i]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["grave"].append(cost_result_tmp)
+                                        cost_result = self.cost_result
+
+                    if cost ==0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.graves[deck_id]["mygrave"] =user_graves
+                        elif mine_or_other2 == 2:
+                            self.graves[deck_id]["othergrave"] =user_graves
+                        else:
+                            self.graves[deck_id]["commongrave"] =user_graves
+                elif(place_tmp[0] == "hand" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_hand_with_effect(self.hands[deck_id]["myhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["myhand"]
+                        elif mine_or_other2 == 2:
+                            tmp_deck = self.get_hand_with_effect(self.hands[deck_id]["otherhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["otherhand"]
+                        else:
+                            tmp_deck = self.get_hand_with_effect(self.hands[deck_id]["commonhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["commonhand"]
+                        user_hands = org_hand
+                    if not tmp:
+                        return None
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_hands)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_hands[index3],chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other):
+                                for index2 in range(len(monster_effect["monster_variable_change_how"])):
+                                    variable_name = monster_effect["monster_variable_change_name"][index2]
+                                    if cost == 0:
+                                        if monster_effect["monster_variable_change_how"][index2] == 0:
+                                            user_hands[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) + int( user_hands[index3]["variables"][variable_name]["value"] ))
+                                        if monster_effect["monster_variable_change_how"][index2] == 1:
+                                            user_hands[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( user_hands[index3]["variables"][variable_name]["value"] ))
+                                        if monster_effect["monster_variable_change_how"][index2] == 2:
+                                            user_hands[index3]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) )
+                                    else:
+                                        cost_result = self.cost_result
+                                        cost_result_tmp = {}
+                                        cost_result_tmp["change_variable"]= monster_effect["monster_variable_change_name"][index4]
+                                        cost_result_tmp["change_variable_val"]=monster_effect["monster_variable_change_val"][index4]
+                                        cost_result_tmp["change_variable_how"]=monster_effect["monster_variable_change_how"][index4]
+                                        cost_result_tmp["place_id"]= user_hands[index3]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["hand_id"]= deck_id
+                                        cost_result["variable"]["deck"].append(cost_result_tmp)
+                                        self.cost_result =cost_result
+                    if cost == 0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.decks[deck_id]["mydeck"] =user_decks
+                        elif mine_or_other2 == 2:
+                            self.decks[deck_id]["otherdeck"] =user_decks
+                        else:
+                            self.decks[deck_id]["commondeck"] =user_decks
+                        if mine_or_other2 == 1:
+                            self.hands[deck_id]["myhand"] =user_hands
+                        elif mine_or_other2 == 2:
+                            self.hands[deck_id]["otherhand"] =user_hands
+                        else:
+                            self.hands[deck_id]["commonhand"] =user_hands
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                        del tmp_deck[0]
+                        for tmpdecktmp in range(len(tmp_deck)):
+                            tmp_deck[tmpdecktmp]-=1
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                        tmp_deck.pop()
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                        tmp_deck.pop(rand_i)
+                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
+                            tmp_deck[tmpdecktmp+rand_i]-=1
+                    effect_flag = False
+                    if not self.check_not_effected(user_hands[range_i],chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other):
+                        for index2 in range(len(monster_effect["monster_variable_change_how"])):
+                            variable_name = monster_effect["monster_variable_change_name"][index2]
+                            if cost ==0:
+                                if monster_effect["monster_variable_change_how"][index2] == 0:
+                                    user_hands[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) + int( user_hands[range_i]["variables"][variable_name]["value"] ))
+                                if monster_effect["monster_variable_change_how"][index2] == 1:
+                                    user_hands[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) - int( user_hands[range_i]["variables"][variable_name]["value"] ))
+                                if monster_effect["monster_variable_change_how"][index2] == 2:
+                                    user_hands[range_i]["variables"][variable_name]["value"] = str(self.calculate_boland(monster_effect["monster_variable_change_val"][index2]) )
+                            else:
+                                cost_result = self.cost_result
+                                cost_result_tmp = {}
+                                cost_result_tmp["change_variable"]= monster_effect["monster_variable_change_name"][index2]
+                                cost_result_tmp["change_variable_val"]=monster_effect["monster_variable_change_val"][index2]
+                                cost_result_tmp["change_variable_how"]=monster_effect["monster_variable_change_how"][index2]
+                                cost_result_tmp["place_id"]= user_hands[range_i]["place_unique_id"]
+                                cost_result_tmp["user"]= int(place_tmp[2])
+                                cost_result_tmp["hand_id"]= deck_id
+                                cost_result["variable"]["hand"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                    if cost == 0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "2" and effect_user ==self.user) or (place_tmp[2] == "1" and effect_user !=self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.hands[deck_id]["myhand"] =user_hands
+                        elif mine_or_other2 == 2:
+                            self.hands[deck_id]["otherhand"] =user_hands
+                        else:
+                            self.hands[deck_id]["commonhand"] =user_hands
+                elif(place_tmp[0] == "hand" ):
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if tmp_deck is None:
+                        if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user !=1)):
+                            mine_or_other = 1
+                        elif((place_tmp[2] == "1" and effect_user !=1) or (place_tmp[2] == "2" and effect_user ==1)):
+                            mine_or_other = 2
+                        else:
+                            mine_or_other = 3
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            tmp_deck = self.get_hand_with_effect(self.hands[deck_id]["myhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["myhand"]
+                        elif mine_or_other2 == 2:
+                            tmp_hand = self.get_hand_with_effect(self.hands[deck_id]["otherhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["otherhand"]
+                        else:
+                            tmp_hand = self.get_hand_with_effect(self.hands[deck_id]["commonhand"],monster_effect_det,effect_kind,exclude,effect_user,"hand",deck_id,0,0,mine_or_other3)
+                            org_hand = self.hands[deck_id]["commonhand"]
+                        user_hands = org_hand
+
+                    if not tmp_hand:
+                        return
+                    if "move_how" not in monster_effect_det:
+                        for index3 in range(len(user_hands)):
+                            effect_flag = False
+                            if not self.check_not_effected(user_hands[index3],chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other):
+                                if cost == 0:
+                                    for index2 in range(len(monster_effect["relation_name"])):
+                                        relation_name = monster_effect["relation_name"][index2]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                        relation_kind = monster_effect["relation_kind"][index2]
+                                        relation_to = monster_effect["relation_kind"][index2]
+                                        if not "rel" in user_hands[index]:
+                                            user_hands[index3]["rel"] = {}
+                                        if not relation_name in user_hands[index]["rel"]:
+                                            user_hands[index3][relation_name] = {}
+                                        if not "m_id" in  user_hands[index][relation_name]:
+                                            user_hands[index3][relation_name]["monster"] = []
+                                        for monster in relation_monster:
+                                            user_hands[index3]["rel"][relation_name]["monster"].append(monster)
+                                        user_hands[index3]["rel"][relation_name]["kind"] = relation_kind
+                                        user_hands[index3]["rel"][relation_name]["to"] = relation_to
+                                        if relation_to =="0":
+                                            relation_from = 1
+                                        elif relation_to =="1":
+                                            relation_from = 0
+                                        self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_hands[index3]["place_unique_id"],"hand",0,0,chain_user)
+                                    else:
+                                        cost_result = self.cost_result
+                                        if not self.check_not_effected(user_hands[index3],chain_user,effect_kind,"hand",deck_id,0,0,1):
+                                            if not "rel" in cost_result:
+                                                cost_result["relation"] = {}
+                                            if not "hand" in cost_result["relation"]:
+                                                cost_result["relation"]["hand"] = []
+                                            relation_name = monster_effect["relation_name"][index]
+                                            relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                            relation_kind = monster_effect["relation_kind"][index]
+                                            relation_to = monster_effect["relation_kind"][index]
+                                            cost_result_tmp["relation_name"]= relation_name
+                                            cost_result_tmp["relation_monster"]= relation_monster
+                                            cost_result_tmp["relation_kind"]= relation_kind
+                                            cost_result_tmp["relation_to"]= relation_to
+                                            cost_result_tmp["place_id"]= user_hands[index3]["place_unique_id"]
+                                            cost_result_tmp["user"]= int(place_tmp[2])
+                                            cost_result_tmp["hand_id"]= hand_id
+                                            cost_result["relation"]["hand"].append(cost_result_tmp)
+                                self.cost_result = cost_result
+                        if cost == 0:
+                            if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                                mine_or_other2 = 1
+                            elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                                mine_or_other2 = 2
+                            else:
+                                mine_or_other2 =3
+                            if mine_or_other2 == 1:
+                                self.hands[deck_id]["myhand"] =user_hands
+                            elif mine_or_other2 == 2:
+                                self.hands[deck_id]["otherhand"] =user_hands
+                            else:
+                                self.hands[deck_id]["commonhand"] =user_hands
+                        continue
+                    elif(monster_effect_det["move_how"] == 0):
+                        range_i = tmp_deck[0]
+                    elif(monster_effect_det["move_how"] == 1):
+                        range_i = tmp_deck[len(tmp_deck)-1]
+                    else:
+                        rand_i = random.randrange(len(tmp))
+                        range_i = tmp[rand_i]
+                    for index2 in range(len(user_hands[range_i]["variables"])):
+                        effect_flag = False
+                        if not self.check_not_effected(user_hands[range_i],chain_user,effect_kind,"hand",deck_id,0,0,mine_or_other):
+                            for index2 in monster_effect["relation_name"]:
+                                if cost == 0:
+                                    relation_name = monster_effect["relation_name"][index2]
+                                    relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                    relation_kind = monster_effect["relation_kind"][index2]
+                                    relation_to = monster_effect["relation_kind"][index2]
+                                    if not "rel" in user_hands[index]:
+                                        user_hands[range_i]["rel"] = {}
+                                    if not relation_name in user_hands[index]["rel"]:
+                                        user_hands[range_i][relation_name] = {}
+                                    if not "m_id" in  user_hands[index][relation_name]:
+                                        user_hands[range_i][relation_name]["monster"] = []
+                                    for monster in relation_monster:
+                                        user_hands[range_i]["rel"][relation_name]["monster"].append(monster)
+                                    user_hands[range_i]["rel"][relation_name]["kind"] = relation_kind
+                                    user_hands[range_i]["rel"][relation_name]["to"] = relation_to
+                                    if relation_to =="0":
+                                        relation_from = 1
+                                    elif relation_to =="1":
+                                        relation_from = 0
+                                    self.set_relation(relation_name,relation_monster,relation_kind,relation_from,user_hands[range_i]["place_unique_id"],"hand",0,0,chain_user)
+                                else:
+                                    cost_result = self.cost_result
+                                    if not self.check_not_effected(user_hands[range_i],chain_user,effect_kind,"hand",deck_id,0,0,1):
+                                        if not "rel" in cost_result:
+                                            cost_result["relation"] = {}
+                                        if not "hand" in cost_result["relation"]:
+                                            cost_result["relation"]["hand"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= user_hands[range_i]["place_unique_id"]
+                                        cost_result_tmp["user"]= int(place_tmp[2])
+                                        cost_result_tmp["deck_id"]= deck_id
+                                        cost_result["relation"]["hand"].append(cost_result_tmp)
+                                        cost_result = self.cost_result
+
+                    if cost ==0:
+                        if((place_tmp[2] == "1" and effect_user ==self.user) or (place_tmp[2] == "2" and effect_user !=self.user)):
+                            mine_or_other2 = 1
+                        elif((place_tmp[2] == "1" and effect_user !=self.user) or (place_tmp[2] == "2" and effect_user ==self.user)):
+                            mine_or_other2 = 2
+                        else:
+                            mine_or_other2 = 3
+                        if mine_or_other2 == 1:
+                            self.hands[deck_id]["myhand"] =user_hands
+                        elif mine_or_other2 == 2:
+                            self.hands[deck_id]["otherhand"] =user_hands
+                        else:
+                            self.hands[deck_id]["commonhand"] =user_hands
+                elif(place_tmp[0] == "field" ):
+                    field_tmp.append(place_tmp[1])
+                    if place["and_or"] == "and":
+                            continue
+                    else:
+                        field_tmp2 = field_tmp
+                        field_tmp = []
+                    chain_user = json.loads(duel.chain_user)
+                    effect_user = chain_user[str(duel.chain-1)]
+                    if((place_tmp[2] == "1" and effect_user ==1) or (place_tmp[2] == "2" and effect_user ==2)):
+                        mine_or_other2 = 1
+                    elif((place_tmp[2] == "1" and effect_user ==2) or (place_tmp[2] == "2" and effect_user ==1)):
+                        mine_or_other2 = 2
+                    else:
+                        mine_or_other2 = 3
+                    for x in range(len(field)):
+                        for y in range(len(field[x])):
+                            exclude = ""
+                            field_kind_flag = True
+                            if field[x][y]["kind"] != "":
+                                tmp = field[x][y]["kind"].split("_")
+                                for kind in field_tmp2:
+                                    if  not kind in tmp:
+                                        field_kind_flag = False
+                                        break
+
+
+                            if field_kind_flag == False:
+                                continue
+                            if field[x][y]["mine_or_other"] != mine_or_other2:
+                                continue
+                            if field[x][y]["det"] is None:
+                                continue
+                            if self.check_not_effected(field[x][y]["det"],chain_user,effect_kind,"field",0,x,y,field[x][y]["mine_or_other"]):
+                                continue
+                            if( self.validate_answer(field[x][y]["det"],monster_effect_det,exclude,duel)):
+                                if cost == 0:
+                                    for index2 in range(len(monster_effect["relation_name"])):
+                                        relation_name = monster_effect["relation_name"][index2]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index2])
+                                        relation_kind = monster_effect["relation_kind"][index2]
+                                        relation_to = monster_effect["relation_kind"][index2]
+                                        if not "rel" in field[x][y]:
+                                            field[x][y]["rel"] = {}
+                                        if not relation_name in field[x][y]["rel"]:
+                                            field[x][y][relation_name] = {}
+                                        if not "m_id" in  field[x][y][relation_name]:
+                                            field[x][y][relation_name]["monster"] = []
+                                        for monster in relation_monster:
+                                            field[x][y]["rel"][relation_name]["monster"].append(monster)
+                                        field[x][y]["rel"][relation_name]["kind"] = relation_kind
+                                        field[x][y]["rel"][relation_name]["to"] = relation_to
+                                        if relation_to =="0":
+                                            relation_from = 1
+                                        elif relation_to =="1":
+                                            relation_from = 0
+                                        self.set_relation(relation_name,relation_monster,relation_kind,relation_from,field[x][y]["place_unique_id"],"hand",0,0,chain_user)
+                                    else:
+                                        cost_result = self.cost_result
+                                        if not "rel" in cost_result:
+                                        	cost_result["relation"] = {}
+                                        if not "field" in cost_result["relation"]:
+                                            cost_result["relation"]["field"] = []
+                                        relation_name = monster_effect["relation_name"][index]
+                                        relation_monster = self.get_as_monster(monster_effect["relation_monster"][index])
+                                        relation_kind = monster_effect["relation_kind"][index]
+                                        relation_to = monster_effect["relation_kind"][index]
+                                        cost_result_tmp["relation_name"]= relation_name
+                                        cost_result_tmp["relation_monster"]= relation_monster
+                                        cost_result_tmp["relation_kind"]= relation_kind
+                                        cost_result_tmp["relation_to"]= relation_to
+                                        cost_result_tmp["place_id"]= field[x][y]["place_unique_id"]
+                                        cost_result_tmp["x"]= x
+                                        cost_result_tmp["y"]= y
+                                        cost_result["relation"]["field"].append(cost_result_tmp)
+                                        self.cost_result = cost_result
+
+        self.field = field
     def change_monster_variable(self,monster_effect,effect_kind,cost =0):
         duel = self.duel
         chain_user = json.loads(duel.chain_user)
@@ -4015,18 +5247,11 @@ class DuelObj:
                         continue
                     elif(monster_effect_det["move_how"] == 0):
                         range_i = tmp_deck[0]
-                        del tmp_deck[0]
-                        for tmpdecktmp in range(len(tmp_deck)):
-                            tmp_deck[tmpdecktmp]-=1
                     elif(monster_effect_det["move_how"] == 1):
                         range_i = tmp_deck[len(tmp_deck)-1]
-                        tmp_deck.pop()
                     else:
                         rand_i = random.randrange(len(tmp))
                         range_i = tmp[rand_i]
-                        tmp_deck.pop(rand_i)
-                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
-                            tmp_deck[tmpdecktmp+rand_i]-=1
                     for index2 in range(len(user_decks[range_i]["variables"])):
                         effect_flag = False
                         if not self.check_not_effected(user_decks[range_i],chain_user,effect_kind,"deck",deck_id,0,0,mine_or_other):
@@ -4138,18 +5363,11 @@ class DuelObj:
                         continue
                     elif(monster_effect_det["move_how"] == 0):
                         range_i = tmp_deck[0]
-                        del tmp_deck[0]
-                        for tmpdecktmp in range(len(tmp_deck)):
-                            tmp_deck[tmpdecktmp]-=1
                     elif(monster_effect_det["move_how"] == 1):
                         range_i = tmp_deck[len(tmp_deck)-1]
-                        tmp_deck.pop()
                     else:
                         rand_i = random.randrange(len(tmp))
                         range_i = tmp[rand_i]
-                        tmp_deck.pop(rand_i)
-                        for tmpdecktmp in range(len(tmp_deck)-rand_i):
-                            tmp_deck[tmpdecktmp+rand_i]-=1
                     effect_flag = False
                     if not self.check_not_effected(user_graves[range_i],chain_user,effect_kind,"grave",deck_id,0,0,mine_or_other):
                         for index2 in range(len(monster_effect["monster_variable_change_how"])):
@@ -7563,4 +8781,168 @@ class DuelObj:
         virtual_variables = self.virtual_variables
         global_variables.update(virtual_variables)
         return global_variables
+
+    def get_as_monster(self,as_monster):
+        if as_monster[0] == "~":
+            tmp = self.cost
+            tmp = tmp[str(int(duel.chain))]
+            place1 = tmp[as_monster[1:]]
+        elif as_monster[0] == "%":
+            tmp = self.timing_mess
+            place1 = tmp[as_monster[1:]]
+        else:
+            tmp = self.mess
+            tmp = tmp[str(int(duel.chain-1))]
+            place1 = tmp[as_monster]
+        return_value = []
+        for place2 in place1:
+            place = place2["place"]
+            tmp["place"] = place
+            tmp["id"] = place2["place_id"]
+            return_value.append(tmp)
+        return return_value
+    def set_relation(self,relation_name,as_monster,relation_kind,relation_from,place_id,place,x,y,deck_id,chain_user=None):
+        tmp_monster = {}
+        tmp_monster["place"]= "field"
+        tmp_monster["id"]= place_id
+        if chain_user == None:
+            chain_user = self.user
+        if as_monster[0] == "~":
+            tmp = self.cost
+            tmp = tmp[str(int(duel.chain))]
+            place1 = tmp[as_monster[1:]]
+        elif as_monster[0] == "%":
+            tmp = self.timing_mess
+            place1 = tmp[as_monster[1:]]
+        else:
+            tmp = self.mess
+            tmp = tmp[str(int(duel.chain-1))]
+            place1 = tmp[as_monster]
+        for place2 in place1:
+            place = place2["place"]
+            field = self.field
+            if place == "field":
+                x = int(place2["x"])
+                y = int(place2["y"])
+                if( "place_id" in place2):
+                    place_id = place2["place_id"]
+                if(field[x][y]["det"]["place_unique_id"] == place_id):
+                    if not "rel" in field[x][y]:
+                        field[x][y]["rel"] = {}
+                    if not relation_name in field[x][y]["rel"]:
+                        field[x][y][relation_name] = {}
+                    if not "monster" in  field[x][y][relation_name]:
+                        field[x][y][relation_name]["monster"] = []
+                    field[x][y]["rel"][relation_name]["monster"].append(tmp_monster)
+                    field[x][y]["rel"][relation_name]["kind"] = relation_kind
+                    field[x][y]["rel"][relation_name]["to"] = relation_from
+                self.field = field
+            elif place=="deck":
+                mine_or_other = place2["mine_or_other"]
+                user = place2["user"]
+                deck_id = place2["deck_id"]
+                place_id = place2["place_id"]
+                if (self.user == chain_user and  mine_or_other == "1") or (chain_user != self.user and mine_or_other == "2"):
+                    mine_or_other = "1"
+                elif (self.user != chain_user and  mine_or_other == "1") or (chain_user == self.user and mine_or_other == "2"):
+                    mine_or_other = "2"
+                else:
+                    mine_or_other = "3"
+                if place == "deck":
+                    if mine_or_other == "1":
+                        tmp = self.decks[deck_id]["mydeck"]
+                    elif mine_or_other == "2":
+                        tmp = self.decks[deck_id]["otherdeck"]
+                    else:
+                        tmp = self.decks[deck_id]["commondeck"]
+                    user_decks = tmp
+                    for index in range(len(user_decks)):
+                        if place_id== user_decks[index]["place_unique_id"]:
+                            if not "rel" in user_decks[index]:
+                                user_decks[index]["rel"] = {}
+                            if not relation_name in user_decks[x][y]["rel"]:
+                                user_decks[index][relation_name] = {}
+                            if not "monster" in  user_decks[x][y][relation_name]:
+                                user_decks[index][relation_name]["monster"] = []
+                            user_decks[index]["rel"][relation_name]["monster"].append(tmp_monster)
+                            user_decks[index]["rel"][relation_name]["kind"] = relation_kind
+                            user_decks[index]["rel"][relation_name]["to"] = relation_from
+                    if mine_or_other == "1":
+                        self.decks[deck_id]["mydeck"] = user_decks
+                    elif mine_or_other == "2":
+                        self.decks[deck_id]["otherdeck"] = user_decks
+                    else:
+                        self.decks[deck_id]["coommondeck"] = user_decks
+                elif place=="grave":
+                    mine_or_other = place2["mine_or_other"]
+                    user = place2["user"]
+                    deck_id = place2["deck_id"]
+                    place_id = place2["place_id"]
+                    if (self.user == chain_user and  mine_or_other == "1") or (chain_user != self.user and mine_or_other == "2"):
+                        mine_or_other = "1"
+                    elif (self.user != chain_user and  mine_or_other == "1") or (chain_user == self.user and mine_or_other == "2"):
+                        mine_or_other = "2"
+                    else:
+                        mine_or_other = "3"
+                    if place == "grave":
+                        if mine_or_other == "1":
+                            tmp = self.graves[deck_id]["mygrave"]
+                        elif mine_or_other == "2":
+                            tmp = self.graves[deck_id]["othergrave"]
+                        else:
+                            tmp = self.graves[deck_id]["commongrave"]
+                        user_graves = tmp
+                        for index in range(len(user_graves)):
+                            if place_id== user_graves[index]["place_unique_id"]:
+                                if not "rel" in user_graves[index]:
+                                    user_graves[index]["rel"] = {}
+                                if not relation_name in user_graves[x][y]["rel"]:
+                                    user_graves[index][relation_name] = {}
+                                if not "monster" in  user_graves[x][y][relation_name]:
+                                    user_graves[index][relation_name]["monster"] = []
+                                user_graves[index]["rel"][relation_name]["monster"].append(tmp_monster)
+                                user_graves[index]["rel"][relation_name]["kind"] = relation_kind
+                                user_graves[index]["rel"][relation_name]["to"] = relation_from
+                    if mine_or_other == "1":
+                        self.graves[deck_id]["mygrave"] = user_graves
+                    elif mine_or_other == "2":
+                        self.graves[deck_id]["othergrave"] = user_graves
+                    else:
+                        self.graves[deck_id]["coommongrave"] = user_graves
+                elif place=="hand":
+                    mine_or_other = place2["mine_or_other"]
+                    user = place2["user"]
+                    deck_id = place2["deck_id"]
+                    place_id = place2["place_id"]
+                    if (self.user == chain_user and  mine_or_other == "1") or (chain_user != self.user and mine_or_other == "2"):
+                        mine_or_other = "1"
+                    elif (self.user != chain_user and  mine_or_other == "1") or (chain_user == self.user and mine_or_other == "2"):
+                        mine_or_other = "2"
+                    else:
+                        mine_or_other = "3"
+                    if place == "hand":
+                        if mine_or_other == "1":
+                            tmp = self.hands[deck_id]["myhand"]
+                        elif mine_or_other == "2":
+                            tmp = self.hands[deck_id]["otherhand"]
+                        else:
+                            tmp = self.hands[deck_id]["commonhand"]
+                        user_hands = tmp
+                        for index in range(len(user_hands)):
+                            if place_id== user_hands[index]["place_unique_id"]:
+                                if not "rel" in user_hands[index]:
+                                    user_hands[index]["rel"] = {}
+                                if not relation_name in user_hands[x][y]["rel"]:
+                                    user_hands[index][relation_name] = {}
+                                if not "monster" in  user_hands[x][y][relation_name]:
+                                    user_hands[index][relation_name]["monster"] = []
+                                user_hands[index]["rel"][relation_name]["monster"].append(tmp_monster)
+                                user_hands[index]["rel"][relation_name]["kind"] = relation_kind
+                                user_hands[index]["rel"][relation_name]["to"] = relation_from
+                    if mine_or_other == "1":
+                        self.hands[deck_id]["myhand"] = user_hands
+                    elif mine_or_other == "2":
+                        self.hands[deck_id]["otherhand"] = user_hands
+                    else:
+                        self.hands[deck_id]["coommonhand"] = user_hands
 

@@ -67,6 +67,9 @@ class TriggerTiming(models.Model):
     chain_user = models.IntegerField(choices=MINE_OR_OTHER3,default=0)
     cost_or_effect = models.IntegerField(choices = COST_OR_EFFECT,blank=True)
     trigger_timing_name = models.CharField(max_length=32,blank=True)
+    relation = models.BooleanField(default=False)
+    relation_kind = models.CharField(max_length = 32,blank=True)
+    relation_to = models.BooleanField(default=False)
 class Trigger(models.Model):
     mine_or_other = models.IntegerField(choices=MINE_OR_OTHER,default=1)
     priority = models.IntegerField(default="100")
@@ -133,6 +136,7 @@ MONSTER_EFFECT_VAL = (
     (17, 'シンプル移動'),
     (2, '変数変動'),
     (9, 'モンスター変数変動'),
+    (25, 'モンスターリレーション'),
     (3, '選択自分'),
     (4, '選択相手'),
     (5, '選択両者'),
@@ -401,6 +405,9 @@ class EternalEffect(models.Model):
     none_monster = models.BooleanField(default=False)
     invalid_none_monster = models.BooleanField(default=False)
     persist = models.BooleanField(default=False)
+    relation = models.BooleanField(default=False)
+    relation_kind = models.CharField(max_length = 32,blank=True)
+    relation_to = models.BooleanField(default=False)
     def __str__(self):
         return self.eternal_name
 class Cost(models.Model):
@@ -489,4 +496,5 @@ class Config(models.Model):
     common_name = models.CharField(default="共有",max_length=32)
     gray_out = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True,on_delete=models.SET_NULL)
     default_sort = models.ForeignKey(MonsterVariables,default=None,blank=True,null=True,related_name="default_sort",on_delete=models.SET_NULL)
+    field_free = models.BooleanField(default=False)
 
